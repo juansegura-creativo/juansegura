@@ -959,7 +959,7 @@ function startPayment(c){
   if(window.createLemonSqueezy && (ls || window.createLemonSqueezy)){
     try{
       if(!lemonSetup){ window.createLemonSqueezy(); lemonSetup=true; }
-      window.LemonSqueezy.Setup({eventHandler:e=>{ if(e&&e.event==='Checkout.Success') waitForAccess(c); }});
+      window.LemonSqueezy.Setup({eventHandler:e=>{ if(e&&e.event==='Checkout.Success'){ setTimeout(()=>{ try{ window.LemonSqueezy.Url.Close(); }catch(_){} waitForAccess(c); },1200); } }});
       window.LemonSqueezy.Url.Open(checkoutUrl(c,true));
       return;
     }catch(err){ console.error(err); }
