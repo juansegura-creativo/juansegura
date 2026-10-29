@@ -231,6 +231,9 @@ input[readonly]{color:var(--fg);background:var(--surface-2)}
 @keyframes ldFill{0%{transform:scaleX(0)}40%,70%{transform:scaleX(1);opacity:1}100%{transform:scaleX(1);opacity:0}}
 @media (prefers-reduced-motion:reduce){.ld-funnel i::after{transform:scaleX(1)}}
 .linkbtn{background:none;border:0;padding:0;justify-self:center;color:var(--accent-text);font-size:13px;text-decoration:underline;cursor:pointer}
+footer .legal{display:flex;gap:16px;flex-wrap:wrap}
+footer .legal a{color:var(--muted)}
+footer .legal a:hover{color:var(--fg)}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 18px;border-radius:999px;font-weight:600;z-index:50;font-size:14px}
 footer{border-top:1px solid var(--line);color:var(--muted);font-size:13px}
 footer .wrap{padding-block:24px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
@@ -442,7 +445,7 @@ a.btn{text-decoration:none}
 
 <main id="app"></main>
 
-<footer><div class="wrap"><span>© 2026 Juan Segura · @creativo.juan</span><span>Pagos en modo de prueba</span></div></footer>
+<footer><div class="wrap"><span>© 2026 Juan Segura · @creativo.juan</span><span class="legal"><a href="/terminos.html">Términos</a><a href="/privacidad.html">Privacidad</a><a href="/reembolsos.html">Reembolsos</a></span></div></footer>
 
 <div id="loader" role="status" aria-live="polite">
   <div class="ld-bob"><button class="ld-mark" id="ld-mark" type="button" aria-label="Juan Segura">JS</button></div>
@@ -455,6 +458,7 @@ a.btn{text-decoration:none}
 <div class="toast" id="toast" hidden></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
+<script src="https://app.lemonsqueezy.com/js/lemon.js" defer></script>
 <script>
 /* ---------- Conexión a Supabase ---------- */
 const SUPABASE_URL='https://izjfqfputahsmvfvgkos.supabase.co';
@@ -469,13 +473,13 @@ let booted=false, recovery=false;
 
 async function loadCourses(){
   const {data,error}=await sb.from('cursos')
-    .select('id,numero,categoria,titulo,descripcion,precio_usd,nivel,orden,modulos(id,titulo,orden,lecciones(id,titulo,duracion,descripcion,orden))')
+    .select('id,numero,categoria,titulo,descripcion,precio_usd,nivel,orden,ls_checkout_url,modulos(id,titulo,orden,lecciones(id,titulo,duracion,descripcion,orden))')
     .order('orden');
   if(error){ console.error(error); S.loadError=true; return; }
   const byOrden=(a,b)=>a.orden-b.orden;
   COURSES=data.map(c=>({
     id:c.id, n:c.numero||'', cat:c.categoria||'', title:c.titulo, sub:c.descripcion||'',
-    price:Number(c.precio_usd)||0, level:c.nivel||'',
+    price:Number(c.precio_usd)||0, level:c.nivel||'', checkout:c.ls_checkout_url||'',
     modules:(c.modulos||[]).sort(byOrden).map(m=>({id:m.id, t:m.titulo,
       lessons:(m.lecciones||[]).sort(byOrden).map(l=>({id:String(l.id), t:l.titulo, d:l.duracion||'', desc:l.descripcion||''}))}))
   }));
@@ -918,79 +922,78 @@ function openAccount(){
 }
 
 function openCheckout(c){
-  const free=c.price===0;
+  const free=c.price===0, ready=free||!!c.checkout;
   modal(`
-    ${free?'':steps(1)}
     <h2>${free?'Inscripción':'Finalizar compra'}</h2>
     <div class="summary">${cover(c,'mini')}<div><b>${esc(c.title)}</b><p style="color:var(--muted);font-size:13px">${totalLessons(c)} clases · acceso inmediato</p></div></div>
     <div class="rows">
       <div><span>Precio</span><span>${fmtPrice(c.price)}${c.price?' USD':''}</span></div>
       <div class="tot"><span>Total</span><span>${fmtPrice(c.price)}${c.price?' USD':''}</span></div>
     </div>
-    ${free?'':`
-    <div class="methods" role="radiogroup" aria-label="Método de pago">
-      <label class="method" for="m-card"><input type="radio" name="m" id="m-card" checked><span>Tarjeta de crédito o débito<small>Visa, Mastercard, Amex · cualquier país</small></span></label>
-      <label class="method" for="m-pp"><input type="radio" name="m" id="m-pp"><span>PayPal<small>Paga con tu saldo o tarjeta guardada</small></span></label>
-    </div>`}
-    <button class="btn lg block" id="pay">${free?'Inscribirme gratis':'Continuar al pago →'}</button>`);
+    ${free?'':`<p class="note">${LOCK} Pago seguro con <b>Lemon Squeezy</b>. Aceptamos tarjetas de cualquier país y PayPal. Según tu país se pueden sumar impuestos locales, que verás antes de pagar.</p>`}
+    <button class="btn lg block" id="pay" ${ready?'':'disabled'}>${free?'Inscribirme gratis':ready?`Pagar ${fmtPrice(c.price)} USD →`:'Muy pronto a la venta'}</button>
+    ${free?'':'<p style="font-size:12px;color:var(--muted);text-align:center;margin:0">Al pagar aceptas los <a href="/terminos.html" target="_blank" style="color:inherit">Términos</a> y la <a href="/reembolsos.html" target="_blank" style="color:inherit">Política de reembolso</a>.</p>'}`);
+  if(!ready) return;
   $('#pay').onclick=()=>{
-    if(free){ $('#pay').disabled=true; return setTimeout(()=>finish(c,null),300); }
-    openGateway(c, $('#m-pp').checked?'paypal':'card');
+    $('#pay').disabled=true;
+    if(free) return setTimeout(()=>enrollFree(c),300);
+    closeModal(); startPayment(c);
   };
 }
 
-const LOCK='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
-function steps(n){return `<div class="steps">${['Resumen','Pago','Acceso'].map((s,i)=>`<span class="${i<n?'on':''}">${i+1}. ${s}</span>`).join('')}</div>`}
+const LOCK='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="vertical-align:-2px"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
 
-function openGateway(c, method){
-  const u=user(), amt=`$${c.price}.00 USD`;
-  const card=`
-    <div class="cardvis" aria-hidden="true"><div class="emv"></div><div class="cn">4242 4242 4242 4242</div><div class="cr"><span id="cv-name">${esc(u.name)}</span><span>12/30</span></div></div>
-    <label for="g-num">Número de tarjeta<span class="field"><input type="text" id="g-num" value="4242 4242 4242 4242" readonly><span class="brands"><i>VISA</i><i>MC</i><i>AMEX</i></span></span></label>
-    <div class="two"><label for="g-exp">Vencimiento<input type="text" id="g-exp" value="12 / 30" readonly></label><label for="g-cvc">CVC<input type="text" id="g-cvc" value="123" readonly></label></div>
-    <label for="g-name">Nombre en la tarjeta<input type="text" id="g-name" value="${esc(u.name)}"></label>
-    <label for="g-country">País<select id="g-country"><option>Estados Unidos</option><option>Colombia</option><option>México</option><option>Puerto Rico</option><option>España</option><option>Otro</option></select></label>`;
-  const pp=`
-    <div class="pp">
-      <p style="font-weight:600">Cuenta de PayPal</p>
-      <div class="rows"><div><span>Usuario</span><span>${esc(u.email)}</span></div><div><span>Paga con</span><span>Saldo PayPal</span></div></div>
-      <p style="color:var(--muted);font-size:13px">En la versión real aquí se abre la ventana de PayPal para que el cliente entre a su cuenta y apruebe el pago.</p>
-    </div>`;
-  modal(`
-    ${steps(2)}
-    <div class="gw-top"><div><span class="mono" style="color:var(--muted)">Pagando a</span><b style="display:block">Juan Segura Creativo</b><span style="font-size:13px;color:var(--muted)">${esc(c.title)}</span></div><div class="gw-amt">${amt}</div></div>
-    <div class="testband">Modo de prueba · Este prototipo no cobra ni acepta tarjetas reales</div>
-    ${method==='card'?card:pp}
-    <button class="btn lg block" id="gpay">${LOCK} ${method==='card'?'Pagar '+amt:'Aprobar pago de '+amt}</button>
-    <div class="gw-foot">${LOCK} Pago cifrado · Tarjetas de cualquier país</div>
-    <button class="back" id="gback" style="padding:0">← Cambiar método de pago</button>`);
-  const gn=$('#g-name'); if(gn) gn.oninput=()=>{$('#cv-name').textContent=gn.value||' '};
-  $('#gback').onclick=()=>openCheckout(c);
-  $('#gpay').onclick=()=>{
-    const b=$('#gpay'); b.disabled=true; b.innerHTML='<span class="spin"></span> Procesando pago…';
-    setTimeout(()=>finish(c,method),1400);
-  };
+/* ---------- Pago con Lemon Squeezy ---------- */
+function checkoutUrl(c, embed){
+  const q=[
+    ['checkout[email]', S.user.email],
+    ['checkout[name]', S.user.name],
+    ['checkout[custom][user_id]', S.user.id],
+    ['embed', embed?'1':'0'], ['media','0'], ['logo','0'], ['desc','0'],
+  ].map(([k,v])=>`${k}=${encodeURIComponent(v)}`).join('&');
+  return c.checkout+(c.checkout.includes('?')?'&':'?')+q;
 }
-
-async function finish(c, method){
-  const {error}=await sb.from('compras').insert({usuario_id:S.user.id, curso_id:c.id, monto_usd:c.price, metodo:method||'gratis'});
-  if(error && error.code!=='23505'){
-    console.error(error);
-    modal(`<h2>No se pudo completar</h2><p style="color:var(--muted)">Hubo un problema guardando tu inscripción. No se hizo ningún cobro. Intenta de nuevo.</p><button class="btn block" id="retry">Volver a intentar</button>`);
-    $('#retry').onclick=()=>openCheckout(c); return;
+let lemonSetup=false;
+function startPayment(c){
+  const ls=window.LemonSqueezy;
+  if(window.createLemonSqueezy && (ls || window.createLemonSqueezy)){
+    try{
+      if(!lemonSetup){ window.createLemonSqueezy(); lemonSetup=true; }
+      window.LemonSqueezy.Setup({eventHandler:e=>{ if(e&&e.event==='Checkout.Success') waitForAccess(c); }});
+      window.LemonSqueezy.Url.Open(checkoutUrl(c,true));
+      return;
+    }catch(err){ console.error(err); }
   }
-  S.owned.add(c.id);
-  const order='DEMO-'+Math.random().toString(36).slice(2,8).toUpperCase();
+  location.href=checkoutUrl(c,false);   // si el pago embebido no carga, abre la página de pago normal
+}
+async function waitForAccess(c){
+  if(owned(c.id)) return successModal(c);
+  modal(`<div class="success" style="display:grid;gap:14px"><span class="spin" style="width:28px;height:28px"></span><h2>Confirmando tu pago…</h2><p style="color:var(--muted)">Esto toma unos segundos. No cierres esta página.</p></div>`);
+  for(let i=0;i<30;i++){
+    await new Promise(r=>setTimeout(r,2500));
+    const {data}=await sb.from('compras').select('curso_id').eq('curso_id',c.id).eq('estado','pagado').maybeSingle();
+    if(data){ S.owned.add(c.id); render(); return successModal(c); }
+  }
+  modal(`<h2>Tu pago está en proceso</h2><p style="color:var(--muted)">Lemon Squeezy ya recibió tu pago y te envió el recibo por correo. El acceso puede tardar unos minutos en activarse: entra a <b>Mis cursos</b> en un rato. Si en 10 minutos no lo ves, escríbeme por Instagram a @creativo.juan.</p><button class="btn block" id="okw">Entendido</button>`);
+  $('#okw').onclick=()=>{closeModal();go('mis-cursos')};
+}
+function successModal(c){
   modal(`
-    ${method?steps(3):''}
     <div class="success" style="display:grid;gap:14px">
       <div class="check">✓</div><h2>¡Listo, ya es tuyo!</h2>
       <p style="color:var(--muted)">${esc(c.title)} ya está en Mis cursos.</p>
     </div>
-    ${method?`<div class="rows note" style="font-size:14px;color:var(--fg)"><div><span>Pedido</span><span class="mono">${order}</span></div><div><span>Método</span><span>${method==='card'?'Tarjeta ···· 4242':'PayPal'}</span></div><div class="tot"><span>Total</span><span>$${c.price}.00 USD</span></div></div>`:''}
-    <button class="btn block" id="startc">Empezar el curso</button>`);
+    <button class="btn lg block" id="startc">Empezar el curso</button>`);
   $('#startc').onclick=()=>{closeModal();go('aprender-'+c.id)};
-  render();
+}
+async function enrollFree(c){
+  const {error}=await sb.from('compras').insert({usuario_id:S.user.id, curso_id:c.id, monto_usd:0, metodo:'gratis'});
+  if(error && error.code!=='23505'){
+    console.error(error);
+    modal(`<h2>No se pudo completar</h2><p style="color:var(--muted)">Hubo un problema guardando tu inscripción. Intenta de nuevo.</p><button class="btn block" id="retry">Volver a intentar</button>`);
+    $('#retry').onclick=()=>openCheckout(c); return;
+  }
+  S.owned.add(c.id); render(); successModal(c);
 }
 
 /* ---------- Arranque ---------- */
