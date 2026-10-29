@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="Cursos de Juan Segura (@creativo.juan): guiones TOFU, MOFU, BOFU y VSL, ganchos y landing pages para negocios hispanos en EE. UU.">
+<meta name="description" content="Cursos de Juan Segura (@creativo.juan): guiones, ganchos, videos y landing pages para negocios hispanos en EE. UU.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ff6a13'/%3E%3Ctext x='32' y='42' font-family='Arial Black,Arial' font-weight='900' font-size='28' text-anchor='middle' fill='%23160a02'%3EJS%3C/text%3E%3C/svg%3E">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>Cursos Juan Segura</title>
@@ -208,6 +208,29 @@ input[readonly]{color:var(--fg);background:var(--surface-2)}
 .gw-foot{display:flex;gap:6px;align-items:center;justify-content:center;font-size:12px;color:var(--muted)}
 .spin{width:16px;height:16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .7s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
+.boot{padding-block:120px;display:flex;gap:10px;justify-content:center;align-items:center;color:var(--muted)}
+/* Pantalla de carga */
+#loader{position:fixed;inset:0;z-index:60;background:var(--bg);display:grid;place-content:center;justify-items:center;gap:22px;padding:24px;text-align:center;transition:opacity .45s ease,visibility .45s;perspective:600px}
+#loader.out{opacity:0;visibility:hidden}
+.ld-bob{animation:ldBob 1.8s ease-in-out infinite}
+.ld-mark{width:88px;height:88px;border-radius:24px;background:var(--accent);display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:36px;color:var(--accent-ink);box-shadow:0 20px 44px rgba(255,106,19,.38);transition:transform .2s ease-out;cursor:pointer;user-select:none;border:0}
+.ld-mark.spin360{animation:ldSpin .7s cubic-bezier(.2,1.2,.4,1)}
+.ld-funnel{display:grid;gap:7px;justify-items:center;width:220px}
+.ld-funnel i{display:block;height:12px;border-radius:99px;background:var(--surface-2);position:relative;overflow:hidden}
+.ld-funnel i:nth-child(1){width:100%}.ld-funnel i:nth-child(2){width:70%}.ld-funnel i:nth-child(3){width:42%}
+.ld-funnel i::after{content:"";position:absolute;inset:0;border-radius:inherit;background:var(--accent);transform:scaleX(0);transform-origin:left;animation:ldFill 2.1s cubic-bezier(.6,0,.2,1) infinite}
+.ld-funnel i:nth-child(2)::after{animation-delay:.35s}.ld-funnel i:nth-child(3)::after{animation-delay:.7s}
+.ld-steps{display:flex;gap:14px;color:var(--muted)}
+.ld-steps span{transition:color .3s}
+.ld-steps span.on{color:var(--accent-text)}
+.ld-msg{font-family:var(--display);font-weight:800;font-size:20px;letter-spacing:-.01em;min-height:1.4em;margin:0;transition:opacity .25s}
+.ld-msg.fade{opacity:0}
+.ld-hint{color:var(--muted);font-size:13px;margin:-12px 0 0}
+@keyframes ldBob{50%{transform:translateY(-8px)}}
+@keyframes ldSpin{from{rotate:0deg}to{rotate:360deg}}
+@keyframes ldFill{0%{transform:scaleX(0)}40%,70%{transform:scaleX(1);opacity:1}100%{transform:scaleX(1);opacity:0}}
+@media (prefers-reduced-motion:reduce){.ld-funnel i::after{transform:scaleX(1)}}
+.linkbtn{background:none;border:0;padding:0;justify-self:center;color:var(--accent-text);font-size:13px;text-decoration:underline;cursor:pointer}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 18px;border-radius:999px;font-weight:600;z-index:50;font-size:14px}
 footer{border-top:1px solid var(--line);color:var(--muted);font-size:13px}
 footer .wrap{padding-block:24px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
@@ -419,49 +442,80 @@ a.btn{text-decoration:none}
 
 <main id="app"></main>
 
-<footer><div class="wrap"><span>© 2026 Juan Segura · @creativo.juan</span><span>Prototipo — los pagos y cuentas son simulados</span></div></footer>
+<footer><div class="wrap"><span>© 2026 Juan Segura · @creativo.juan</span><span>Pagos en modo de prueba</span></div></footer>
 
+<div id="loader" role="status" aria-live="polite">
+  <div class="ld-bob"><button class="ld-mark" id="ld-mark" type="button" aria-label="Juan Segura">JS</button></div>
+  <div class="ld-funnel" aria-hidden="true"><i></i><i></i><i></i></div>
+  <p class="ld-msg" id="ld-msg">Preparando tus cursos…</p>
+  <p class="ld-hint" id="ld-hint">Toca el logo mientras esperas</p>
+  <button class="btn sm" id="ld-retry" type="button" hidden>Reintentar</button>
+</div>
 <div id="modalroot"></div>
 <div class="toast" id="toast" hidden></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <script>
-/* ---------- Datos (plantillas para reemplazar) ---------- */
-const lessons = (n, base) => Array.from({length:n},(_,i)=>({t:`Título de la lección ${i+1}`, d:`${String(base+i*2).padStart(2,'0')}:00`}));
-const mods = (counts) => counts.map((c,i)=>({t:`Módulo ${i+1} · Título del módulo`, lessons:lessons(c,6+i)}));
-const COURSES = [
-  {id:'curso-1', n:'01', cat:'Categoría A', title:'Nombre del curso 1', sub:'Escribe aquí, en una o dos líneas, qué logra tu alumno al terminar este curso.', price:97, level:'Principiante', modules:mods([3,4,3])},
-  {id:'curso-2', n:'02', cat:'Categoría B', title:'Nombre del curso 2', sub:'La promesa concreta del curso: qué va a poder hacer y en cuánto tiempo.', price:197, level:'Intermedio', modules:mods([4,4,5,3])},
-  {id:'curso-3', n:'03', cat:'Categoría A', title:'Nombre del curso 3', sub:'Ideal para un curso corto o taller: un solo resultado, bien específico.', price:47, level:'Principiante', modules:mods([3,3])},
-  {id:'curso-4', n:'04', cat:'Gratis', title:'Clase gratuita', sub:'Usa este espacio para tu imán de prospectos: una clase gratis que lleva a tu curso principal.', price:0, level:'Todos', modules:mods([2])},
-];
-const LEARN = ['Resultado 1 que obtiene el alumno','Resultado 2 que obtiene el alumno','Resultado 3 que obtiene el alumno','Resultado 4 que obtiene el alumno'];
+/* ---------- Conexión a Supabase ---------- */
+const SUPABASE_URL='https://izjfqfputahsmvfvgkos.supabase.co';
+const SUPABASE_KEY='sb_publishable_afMpViRqXd32KXNNIRIOnA_1sTZwO-d';
+const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
-/* ---------- Almacenamiento local (solo este navegador) ---------- */
-const store = {
-  get(k,f){try{const v=localStorage.getItem('acj_'+k);return v?JSON.parse(v):f}catch(e){return f}},
-  set(k,v){try{localStorage.setItem('acj_'+k,JSON.stringify(v))}catch(e){}}
-};
-let S = {
-  users: store.get('users',{}),
-  session: store.get('session',null),
-  purchases: store.get('purchases',{}),   // {email:[courseId]}
-  progress: store.get('progress',{}),     // {email:{courseId:[lessonKey]}}
-  filter:'Todos',
-};
-const save = ()=>{['users','session','purchases','progress'].forEach(k=>store.set(k,S[k]))};
+/* ---------- Datos (vienen de la base de datos) ---------- */
+let COURSES = [];
+const LEARN = ['Resultado 1 que obtiene el alumno','Resultado 2 que obtiene el alumno','Resultado 3 que obtiene el alumno','Resultado 4 que obtiene el alumno'];
+let S = { user:null, owned:new Set(), done:new Set(), filter:'Todos', loadError:false };
+let booted=false, recovery=false;
+
+async function loadCourses(){
+  const {data,error}=await sb.from('cursos')
+    .select('id,numero,categoria,titulo,descripcion,precio_usd,nivel,orden,modulos(id,titulo,orden,lecciones(id,titulo,duracion,descripcion,orden))')
+    .order('orden');
+  if(error){ console.error(error); S.loadError=true; return; }
+  const byOrden=(a,b)=>a.orden-b.orden;
+  COURSES=data.map(c=>({
+    id:c.id, n:c.numero||'', cat:c.categoria||'', title:c.titulo, sub:c.descripcion||'',
+    price:Number(c.precio_usd)||0, level:c.nivel||'',
+    modules:(c.modulos||[]).sort(byOrden).map(m=>({id:m.id, t:m.titulo,
+      lessons:(m.lecciones||[]).sort(byOrden).map(l=>({id:String(l.id), t:l.titulo, d:l.duracion||'', desc:l.descripcion||''}))}))
+  }));
+}
+async function loadUserData(){
+  if(!S.user){ S.owned=new Set(); S.done=new Set(); return; }
+  const [c,p]=await Promise.all([
+    sb.from('compras').select('curso_id').eq('estado','pagado'),
+    sb.from('progreso').select('leccion_id')
+  ]);
+  S.owned=new Set((c.data||[]).map(r=>r.curso_id));
+  S.done=new Set((p.data||[]).map(r=>String(r.leccion_id)));
+}
+function setUser(u){
+  S.user = u ? {id:u.id, email:u.email, name:(u.user_metadata&&u.user_metadata.nombre)||u.email.split('@')[0]} : null;
+}
+function authError(e){
+  const m=(e&&e.message)||'';
+  if(/invalid login credentials/i.test(m)) return 'Correo o contraseña incorrectos.';
+  if(/email not confirmed/i.test(m)) return 'Aún no confirmas tu correo. Busca el enlace en tu bandeja de entrada (o en spam).';
+  if(/already registered|already been registered/i.test(m)) return 'Ya existe una cuenta con ese correo. Entra en la pestaña "Entrar".';
+  if(/rate limit|too many/i.test(m)) return 'Demasiados intentos seguidos. Espera unos minutos y vuelve a intentar.';
+  if(/password/i.test(m)) return 'La contraseña no es válida. Usa al menos 6 caracteres.';
+  return 'No pudimos completar la acción. Revisa tu conexión e intenta de nuevo.';
+}
 
 /* ---------- Utilidades ---------- */
 const $ = s=>document.querySelector(s);
 const esc = s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const byId = id=>COURSES.find(c=>c.id===id);
-const user = ()=>S.session && S.users[S.session] ? {email:S.session,...S.users[S.session]} : null;
-const owned = id=>!!user() && (S.purchases[S.session]||[]).includes(id);
+const user = ()=>S.user;
+const owned = id=>!!S.user && S.owned.has(id);
 const totalLessons = c=>c.modules.reduce((a,m)=>a+m.lessons.length,0);
-const totalMin = c=>c.modules.reduce((a,m)=>a+m.lessons.reduce((b,l)=>b+parseInt(l.d),0),0);
+const totalMin = c=>c.modules.reduce((a,m)=>a+m.lessons.reduce((b,l)=>b+(parseInt(l.d)||0),0),0);
 const fmtPrice = p=>p===0?'Gratis':`$${p}`;
-const doneList = id=>((S.progress[S.session]||{})[id])||[];
-const pct = c=>Math.round(doneList(c.id).length/totalLessons(c)*100);
-const cover = (c,extra='')=>`<div class="cover cv${(+c.n-1)%4} ${extra}"><span class="tag mono">${esc(c.cat)}</span>${owned(c.id)?'<span class="owned mono">Tuyo</span>':''}<span class="num">${c.n}</span></div>`;
+const lessonIds = c=>c.modules.flatMap(m=>m.lessons.map(l=>l.id));
+const doneList = id=>{const c=byId(id); return c?lessonIds(c).filter(k=>S.done.has(k)):[]};
+const pct = c=>{const t=totalLessons(c); return t?Math.round(doneList(c.id).length/t*100):0};
+const coverIdx = c=>(((parseInt(c.n)||COURSES.indexOf(c)+1)-1)%4+4)%4;
+const cover = (c,extra='')=>`<div class="cover cv${coverIdx(c)} ${extra}"><span class="tag mono">${esc(c.cat)}</span>${owned(c.id)?'<span class="owned mono">Tuyo</span>':''}<span class="num">${esc(c.n)}</span></div>`;
 function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,2400)}
 
 /* ---------- Rutas por hash ---------- */
@@ -500,7 +554,7 @@ function renderCatalog(){
     <div>
       <p class="mono" style="color:var(--accent-text);margin-bottom:14px">Cursos de @creativo.juan</p>
       <h1>Aprende lo que yo <em>aplico</em> con negocios hispanos en EE. UU.</h1>
-      <p>Lo que hacía como Director Creativo en una agencia de EE. UU., convertido en cursos: guiones TOFU, MOFU, BOFU y VSL, ganchos y landing pages para negocios de servicios.</p>
+      <p>Lo que hacía como Director Creativo en una agencia de EE. UU., convertido en cursos: guiones de video, ganchos, VSL y landing pages para negocios de servicios.</p>
       <div class="hero-cta"><button class="btn lg pulse" id="h-ver">Ver los cursos <span class="arr down">↓</span></button><button class="btn ghost" id="h-free">Empezar con la clase gratis</button></div>
     </div>
     <div class="facts">
@@ -509,7 +563,7 @@ function renderCatalog(){
       <div class="fact"><b>Formato</b><span>Clases en video, por módulos</span></div>
     </div>
   </section>
-  <div class="marquee" aria-hidden="true"><div class="mq">${Array(2).fill(['TOFU','MOFU','BOFU','VSL','Ganchos','Guiones','Landing pages','Posicionamiento','Negocios hispanos en EE. UU.'].map(w=>`<span>${w}</span><i>✦</i>`).join('')).join('')}</div></div>
+  <div class="marquee" aria-hidden="true"><div class="mq">${Array(2).fill(['Ganchos','Guiones','VSL','Landing pages','Edición de video','Posicionamiento','Negocios hispanos en EE. UU.'].map(w=>`<span>${w}</span><i>✦</i>`).join('')).join('')}</div></div>
   <section class="wrap" id="cursos">
     <div class="sechead">
       <h2>Cursos disponibles</h2>
@@ -529,6 +583,7 @@ function renderCatalog(){
             <span class="link">${owned(c.id)?'Continuar →':'Ver curso →'}</span>
           </div>
         </button>`).join('')}
+      ${!list.length?`<div class="empty" style="grid-column:1/-1;margin-top:0"><p>${S.loadError?'No pudimos cargar los cursos. Revisa tu conexión y recarga la página.':'Pronto habrá cursos en esta categoría.'}</p></div>`:''}
     </div>
   </section>
 
@@ -541,7 +596,7 @@ function renderCatalog(){
       <ol class="timeline">
         <li><span class="mono">Oct 2025</span><div><b>Editor de video</b><p>Entro a AD Media a editar contenido para negocios hispanos en EE. UU.</p></div></li>
         <li><span class="mono">Mar 2026</span><div><b>Líder de Diseño</b><p>Paso a liderar las piezas gráficas de las campañas.</p></div></li>
-        <li><span class="mono">2026</span><div><b>Director Creativo</b><p>Lidero el equipo de video y escribo guiones TOFU, MOFU, BOFU y VSL hasta octubre de 2026.</p></div></li>
+        <li><span class="mono">2026</span><div><b>Director Creativo</b><p>Lidero el equipo de video y escribo los guiones de las campañas, incluidos los VSL, hasta octubre de 2026.</p></div></li>
         <li><span class="mono">Hoy</span><div><b>@creativo.juan</b><p>Enseño a dueños de negocio a armar su embudo completo, con mi cara al frente.</p></div></li>
       </ol>
       <div class="tools">${['Premiere Pro','After Effects','Photoshop','Illustrator','CapCut','Runway','ElevenLabs','Envato AI'].map(t=>`<span>${t}</span>`).join('')}</div>
@@ -553,7 +608,7 @@ function renderCatalog(){
     <h2>Cuatro cosas que no vas a encontrar en un tutorial suelto</h2>
     <div class="reasons">
       <div class="reason"><span class="ic">${ic('<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>')}</span><h3>Sale de cuentas reales</h3><p>Los ejemplos vienen de campañas para negocios de servicios hispanos en EE. UU., no de teoría traducida del inglés.</p></div>
-      <div class="reason"><span class="ic">${ic('<path d="M3 4h18l-7 8v6l-4 2v-8z"/>')}</span><h3>Ves el embudo completo</h3><p>Cómo se conecta el video que atrae (TOFU) con el que educa (MOFU) y el que lleva a agendar una llamada (BOFU).</p></div>
+      <div class="reason"><span class="ic">${ic('<path d="M3 4h18l-7 8v6l-4 2v-8z"/>')}</span><h3>Ves el proceso completo</h3><p>Cómo se conecta el video que atrae con el que genera confianza y el que lleva a agendar una llamada.</p></div>
       <div class="reason"><span class="ic">${ic('<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M8 13h8M8 17h5"/>')}</span><h3>Te llevas plantillas</h3><p>Estructuras de guion, bancos de ganchos y checklists para usar el mismo día en tu próximo video.</p></div>
       <div class="reason"><span class="ic">${ic('<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>')}</span><h3>Lo que no te dicen</h3><p>Qué no puedes prometer en un anuncio en EE. UU. y cómo escribir sin chocar con las reglas de la FTC.</p></div>
     </div>
@@ -561,7 +616,7 @@ function renderCatalog(){
       <div class="row head" role="row"><div class="bad" role="columnheader">Por tu cuenta</div><div role="columnheader">Con el curso</div></div>
       <div class="row" role="row"><div class="bad" role="cell">Saltas entre tutoriales sin orden</div><div class="good" role="cell">Sigues una ruta por módulos, de la idea al video publicado</div></div>
       <div class="row" role="row"><div class="bad" role="cell">Copias ganchos en inglés que no conectan</div><div class="good" role="cell">Usas ganchos escritos para el cliente hispano</div></div>
-      <div class="row" role="row"><div class="bad" role="cell">Publicas sin saber para qué sirve cada video</div><div class="good" role="cell">Sabes qué pieza va en TOFU, MOFU y BOFU</div></div>
+      <div class="row" role="row"><div class="bad" role="cell">Publicas sin saber para qué sirve cada video</div><div class="good" role="cell">Sabes qué video publicar para atraer, para generar confianza y para cerrar</div></div>
       <div class="row" role="row"><div class="bad" role="cell">Prometes resultados y te arriesgas</div><div class="good" role="cell">Escribes ofertas claras sin promesas que no puedes cumplir</div></div>
     </div>
   </div></section>
@@ -710,7 +765,8 @@ function renderMine(){
 function renderPlayer(id){
   const c=byId(id);
   if(!c||!owned(id)) return c?renderDetail(c):renderCatalog();
-  const flat=[]; c.modules.forEach((m,mi)=>m.lessons.forEach((l,li)=>flat.push({...l,key:`${mi}-${li}`,m:mi})));
+  const flat=[]; c.modules.forEach((m,mi)=>m.lessons.forEach(l=>flat.push({...l,key:l.id,m:mi})));
+  if(!flat.length){ $('#app').innerHTML=`<div class="wrap mine"><h1>${esc(c.title)}</h1><div class="empty"><p>Este curso todavía no tiene clases.</p></div></div>`; return; }
   const done=doneList(id);
   let cur = currentLesson[id] || (flat.find(l=>!done.includes(l.key))||flat[0]).key;
   currentLesson[id]=cur;
@@ -730,7 +786,7 @@ function renderPlayer(id){
             ${idx<flat.length-1?'<button class="btn" id="next">Siguiente clase →</button>':''}
           </div>
         </div>
-        <div class="notes">Descripción de la clase, recursos y enlaces de descarga. Reemplaza este texto con el material de cada lección.</div>
+        <div class="notes">${L.desc?esc(L.desc):'Descripción de la clase, recursos y enlaces de descarga. Reemplaza este texto con el material de cada lección.'}</div>
       </div>
       <aside class="toc">
         <div class="top"><b>${esc(c.title)}</b><div class="prog"><i style="width:${pct(c)}%"></i></div><span class="mono" style="color:var(--muted)">${pct(c)}% · ${done.length}/${flat.length} clases</span></div>
@@ -741,11 +797,23 @@ function renderPlayer(id){
   </div>`;
   $('#back').onclick=()=>go('mis-cursos');
   document.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{currentLesson[id]=b.dataset.k;renderPlayer(id)});
-  $('#mark').onclick=()=>{
-    const p=S.progress[S.session]=S.progress[S.session]||{}; const arr=p[id]=p[id]||[];
-    if(arr.includes(cur)) p[id]=arr.filter(k=>k!==cur); else {arr.push(cur); toast(pct(c)===100?'¡Terminaste el curso!':'Clase completada')}
-    save(); renderPlayer(id);
+  $('#mark').onclick=async()=>{
+    const b=$('#mark'); b.disabled=true;
+    if(S.done.has(cur)){
+      const {error}=await sb.from('progreso').delete().eq('leccion_id',Number(cur));
+      if(error) toast('No se pudo guardar. Intenta de nuevo.'); else S.done.delete(cur);
+    } else {
+      const {error}=await sb.from('progreso').insert({usuario_id:S.user.id, leccion_id:Number(cur)});
+      if(error && error.code!=='23505') toast('No se pudo guardar. Intenta de nuevo.');
+      else { S.done.add(cur); toast(pct(c)===100?'¡Terminaste el curso!':'Clase completada'); }
+    }
+    renderPlayer(id);
   };
+  sb.from('lecciones_video').select('video_url').eq('leccion_id',Number(cur)).maybeSingle().then(({data})=>{
+    const v=$('.video');
+    if(v && data && data.video_url && currentLesson[id]===cur)
+      v.innerHTML=`<iframe src="${esc(data.video_url)}" title="${esc(L.t)}" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`;
+  });
   const nx=$('#next'); if(nx) nx.onclick=()=>{currentLesson[id]=flat[idx+1].key;renderPlayer(id);window.scrollTo(0,0)};
 }
 
@@ -772,31 +840,69 @@ function openLogin(msg, mode='login'){
       <label for="f-email">Correo<input type="email" id="f-email" autocomplete="email" placeholder="tu@correo.com"></label>
       <label for="f-pass">Contraseña<input type="password" id="f-pass" autocomplete="${mode==='reg'?'new-password':'current-password'}" placeholder="Mínimo 6 caracteres"></label>
       <p class="err" id="f-err"></p>
-      <button class="btn block" type="submit">${mode==='login'?'Entrar':'Crear cuenta'}</button>
-    </form>
-    <p class="note"><b>Prototipo:</b> las cuentas se guardan solo en este navegador. En la versión real el login va con Supabase o similar.</p>`);
+      <button class="btn block" type="submit" id="f-submit">${mode==='login'?'Entrar':'Crear cuenta'}</button>
+      ${mode==='login'?'<button type="button" class="linkbtn" id="forgot">¿Olvidaste tu contraseña?</button>':''}
+    </form>`);
   const keep=pendingBuy;
   $('#t-login').onclick=()=>{openLogin(msg,'login');pendingBuy=keep};
   $('#t-reg').onclick=()=>{openLogin(msg,'reg');pendingBuy=keep};
   pendingBuy=keep;
-  $('#authform').onsubmit=e=>{
+  const fg=$('#forgot');
+  if(fg) fg.onclick=async()=>{
+    const email=$('#f-email').value.trim().toLowerCase(), err=$('#f-err');
+    if(!/^\S+@\S+\.\S+$/.test(email)) return err.textContent='Escribe tu correo arriba y vuelve a tocar "¿Olvidaste tu contraseña?".';
+    fg.disabled=true;
+    const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin});
+    fg.disabled=false;
+    if(error) return err.textContent=authError(error);
+    modal(`<div class="success" style="display:grid;gap:14px"><div class="check">✓</div><h2>Revisa tu correo</h2><p style="color:var(--muted)">Si existe una cuenta con <b>${esc(email)}</b>, te llegará un enlace para crear una contraseña nueva.</p></div><button class="btn block" id="okmail">Entendido</button>`);
+    $('#okmail').onclick=closeModal;
+  };
+  $('#authform').onsubmit=async e=>{
     e.preventDefault();
     const email=$('#f-email').value.trim().toLowerCase(), pass=$('#f-pass').value, err=$('#f-err');
+    err.textContent='';
     if(!/^\S+@\S+\.\S+$/.test(email)) return err.textContent='Escribe un correo válido.';
     if(pass.length<6) return err.textContent='La contraseña debe tener al menos 6 caracteres.';
-    if(mode==='reg'){
-      const name=$('#f-name').value.trim();
-      if(!name) return err.textContent='Escribe tu nombre.';
-      if(S.users[email]) return err.textContent='Ya existe una cuenta con ese correo. Entra en la pestaña "Entrar".';
-      S.users[email]={name,pass};
-    } else {
-      if(!S.users[email]) return err.textContent='No hay una cuenta con ese correo. Créala en la pestaña "Crear cuenta".';
-      if(S.users[email].pass!==pass) return err.textContent='La contraseña no coincide.';
+    let name='';
+    if(mode==='reg'){ name=$('#f-name').value.trim(); if(!name) return err.textContent='Escribe tu nombre.'; }
+    const btn=$('#f-submit'), label=btn.textContent;
+    btn.disabled=true; btn.innerHTML='<span class="spin"></span> Un momento…';
+    const res = mode==='reg'
+      ? await sb.auth.signUp({email, password:pass, options:{data:{nombre:name}, emailRedirectTo:location.origin}})
+      : await sb.auth.signInWithPassword({email, password:pass});
+    btn.disabled=false; btn.textContent=label;
+    if(res.error) return err.textContent=authError(res.error);
+    if(mode==='reg' && res.data.user && res.data.user.identities && res.data.user.identities.length===0)
+      return err.textContent='Ya existe una cuenta con ese correo. Entra en la pestaña "Entrar".';
+    if(mode==='reg' && !res.data.session){
+      modal(`<div class="success" style="display:grid;gap:14px"><div class="check">✉</div><h2>Revisa tu correo</h2><p style="color:var(--muted)">Te enviamos un enlace a <b>${esc(email)}</b> para activar tu cuenta. Al hacer clic vuelves aquí con tu sesión iniciada. Si no lo ves, busca en spam.</p></div><button class="btn block" id="okmail">Entendido</button>`);
+      $('#okmail').onclick=closeModal; return;
     }
-    S.session=email; save();
+    setUser(res.data.user); await loadUserData();
     const next=pendingBuy; closeModal(); render();
     toast(mode==='reg'?'Cuenta creada':'Sesión iniciada');
     if(next){ owned(next)?go('aprender-'+next):openCheckout(byId(next)); }
+  };
+}
+
+function openNewPassword(){
+  modal(`
+    <h2>Crea tu nueva contraseña</h2>
+    <form id="npform" style="display:grid;gap:12px" novalidate>
+      <label for="np-pass">Contraseña nueva<input type="password" id="np-pass" autocomplete="new-password" placeholder="Mínimo 6 caracteres"></label>
+      <p class="err" id="np-err"></p>
+      <button class="btn block" type="submit" id="np-btn">Guardar contraseña</button>
+    </form>`);
+  $('#npform').onsubmit=async e=>{
+    e.preventDefault();
+    const pass=$('#np-pass').value, err=$('#np-err');
+    if(pass.length<6) return err.textContent='La contraseña debe tener al menos 6 caracteres.';
+    $('#np-btn').disabled=true;
+    const {error}=await sb.auth.updateUser({password:pass});
+    $('#np-btn').disabled=false;
+    if(error) return err.textContent=authError(error);
+    closeModal(); toast('Contraseña actualizada');
   };
 }
 
@@ -808,7 +914,7 @@ function openAccount(){
     <button class="btn block" id="a-mis">Mis cursos</button>
     <button class="btn ghost block" id="a-out">Cerrar sesión</button>`);
   $('#a-mis').onclick=()=>{closeModal();go('mis-cursos')};
-  $('#a-out').onclick=()=>{S.session=null;save();closeModal();go('cursos');toast('Sesión cerrada')};
+  $('#a-out').onclick=async()=>{await sb.auth.signOut(); setUser(null); S.owned=new Set(); S.done=new Set(); closeModal(); go('cursos'); toast('Sesión cerrada')};
 }
 
 function openCheckout(c){
@@ -866,9 +972,14 @@ function openGateway(c, method){
   };
 }
 
-function finish(c, method){
-  const arr=S.purchases[S.session]=S.purchases[S.session]||[];
-  if(!arr.includes(c.id)) arr.push(c.id); save();
+async function finish(c, method){
+  const {error}=await sb.from('compras').insert({usuario_id:S.user.id, curso_id:c.id, monto_usd:c.price, metodo:method||'gratis'});
+  if(error && error.code!=='23505'){
+    console.error(error);
+    modal(`<h2>No se pudo completar</h2><p style="color:var(--muted)">Hubo un problema guardando tu inscripción. No se hizo ningún cobro. Intenta de nuevo.</p><button class="btn block" id="retry">Volver a intentar</button>`);
+    $('#retry').onclick=()=>openCheckout(c); return;
+  }
+  S.owned.add(c.id);
   const order='DEMO-'+Math.random().toString(36).slice(2,8).toUpperCase();
   modal(`
     ${method?steps(3):''}
@@ -892,7 +1003,62 @@ document.addEventListener('pointerdown',e=>{
 $('#logo').onclick=()=>{document.documentElement.classList.remove('calm');go('cursos')};
 $('#nav-cursos').onclick=()=>go('cursos');
 $('#nav-mis').onclick=()=>go('mis-cursos');
-render();
+
+if(sb){
+  sb.auth.onAuthStateChange((event, session)=>{
+    if(event==='PASSWORD_RECOVERY') recovery=true;
+    if(!booted || event==='INITIAL_SESSION' || event==='TOKEN_REFRESHED') return;
+    setTimeout(async()=>{
+      setUser(session?session.user:null);
+      await loadUserData();
+      render();
+      if(recovery){ recovery=false; openNewPassword(); }
+    },0);
+  });
+}
+/* ---------- Pantalla de carga ---------- */
+const loader=(()=>{
+  const el=$('#loader'), mark=$('#ld-mark'), msg=$('#ld-msg'), steps=[...document.querySelectorAll('.ld-steps span')];
+  const lines=['Preparando tus cursos…','Revisando tu sesión…','Cargando tus clases…','Ya casi…'];
+  const fun=['¡Eso! Sigue así','Ganchos cargando…','Directo al grano','Una vez más'];
+  let i=0, taps=0, t0=performance.now();
+  const say=txt=>{msg.classList.add('fade');setTimeout(()=>{msg.textContent=txt;msg.classList.remove('fade')},220)};
+  const tick=setInterval(()=>{i=(i+1)%lines.length; say(lines[i]); steps.forEach((s,k)=>s.classList.toggle('on',k===i%3));},1500);
+  el.addEventListener('pointermove',e=>{
+    const r=mark.getBoundingClientRect(), dx=(e.clientX-(r.left+r.width/2))/r.width, dy=(e.clientY-(r.top+r.height/2))/r.height;
+    mark.style.transform=`rotateY(${Math.max(-25,Math.min(25,dx*14))}deg) rotateX(${Math.max(-25,Math.min(25,-dy*14))}deg)`;
+  });
+  el.addEventListener('pointerleave',()=>mark.style.transform='');
+  mark.addEventListener('click',()=>{
+    mark.classList.remove('spin360'); void mark.offsetWidth; mark.classList.add('spin360');
+    say(fun[taps++%fun.length]);
+  });
+  return {
+    async hide(){
+      const wait=Math.max(0,700-(performance.now()-t0));
+      await new Promise(r=>setTimeout(r,wait));
+      clearInterval(tick); el.classList.add('out'); setTimeout(()=>el.remove(),500);
+    },
+    fail(text){
+      clearInterval(tick); msg.textContent=text; $('#ld-hint').hidden=true;
+      document.querySelector('.ld-funnel').style.opacity='.35';
+      const b=$('#ld-retry'); b.hidden=false; b.onclick=()=>location.reload();
+    }
+  };
+})();
+
+async function boot(){
+  if(!sb){ loader.fail('No pudimos conectar. Revisa tu internet.'); return; }
+  const [{data}] = await Promise.all([sb.auth.getSession(), loadCourses()]);
+  setUser(data && data.session ? data.session.user : null);
+  await loadUserData();
+  booted=true;
+  render();
+  loader.hide();
+  setTimeout(()=>document.documentElement.classList.add('calm'),1600);
+  if(recovery){ recovery=false; openNewPassword(); }
+}
+boot();
 </script>
 
 </body>
