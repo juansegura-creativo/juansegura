@@ -782,7 +782,9 @@ function renderDetail(c){
 
 /* ---------- Agendar auditoría ---------- */
 // Pega aquí el enlace "src" del código de Google Calendar (Website embed → Inline booking page)
-const GCAL_EMBED = '';
+const GCAL_EMBED = 'https://calendar.google.com/calendar/appointments/schedules/AcZssZ0p6r6NwPBR5QhXSIv4qWtIq7myQWRaveLtgrvBjGlKO5Sed4y6NoWZBTjZrd-NtX48qPYtOStA?gv=true';
+// Enlace corto de la página de reservas (se abre en pestaña nueva si no hay embed)
+const GCAL_LINK = 'https://calendar.app.google/1JtLwt4sFHMsw265A';
 
 function renderAgenda(){
   const u=user();
@@ -870,7 +872,11 @@ function bookStep2(u){
     <p class="sub">Usa el mismo correo que escribiste para que te llegue la invitación con el enlace de Meet.</p>
     ${GCAL_EMBED
       ? `<div class="calwrap"><iframe src="${esc(GCAL_EMBED)}" title="Agenda de Juan Segura" loading="lazy"></iframe></div>
-         <p style="font-size:12px;color:var(--muted);margin:0">Si el calendario no carga, <a href="${esc(GCAL_EMBED.replace('?gv=true',''))}" target="_blank" rel="noopener" style="color:var(--accent-text)">ábrelo en una pestaña nueva</a>.</p>`
+         <p style="font-size:12px;color:var(--muted);margin:0">Si el calendario no carga, <a href="${esc(GCAL_LINK)}" target="_blank" rel="noopener" style="color:var(--accent-text)">ábrelo en una pestaña nueva</a>.</p>`
+      : GCAL_LINK
+      ? `<div class="empty" style="margin:0;gap:16px"><p>Ya recibí tus datos. Ahora elige el día y la hora que te queden mejor; se abre mi calendario en una pestaña nueva.</p>
+           <a class="btn lg block" href="${esc(GCAL_LINK)}" target="_blank" rel="noopener">Ver horarios disponibles <span class="arr">→</span></a>
+           <p style="font-size:12px;margin:0">Los horarios se muestran en tu zona horaria.</p></div>`
       : `<div class="empty" style="margin:0"><p>Ya recibí tus datos. El calendario estará disponible muy pronto; mientras tanto escríbeme por Instagram y cuadramos la hora.</p><p class="mono" style="color:var(--fg);user-select:all">@creativo.juan</p></div>`}
     <button class="back" id="bk-back" style="padding:0">← Editar mis datos</button>`;
   $('#bk-back').onclick=()=>bookStep1(u);
