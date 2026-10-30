@@ -139,6 +139,45 @@ details.mod li span:last-child{font-family:var(--mono);font-size:12px}
 .play{width:68px;height:68px;border-radius:50%;background:var(--accent);display:grid;place-items:center;margin:0 auto 12px}
 .play::before{content:"";border-left:20px solid var(--accent-ink);border-top:12px solid transparent;border-bottom:12px solid transparent;margin-left:5px}
 .video small{color:rgba(255,255,255,.65);display:block;margin-top:4px}
+.mats{margin-top:18px;display:grid;gap:10px}
+.mats h3{font-size:16px}
+.mat{display:flex;align-items:center;gap:14px;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--surface)}
+.mat .ico{width:42px;height:48px;border-radius:8px;background:var(--accent-soft);color:var(--accent-text);display:grid;place-items:center;font-family:var(--mono);font-size:11px;font-weight:700;flex:none}
+.mat .nm{flex:1;min-width:0;font-weight:600;font-size:14px;overflow-wrap:anywhere}
+.mat .nm small{display:block;color:var(--muted);font-weight:400;font-size:12px}
+@media (max-width:560px){.mat{flex-wrap:wrap}.mat .btn{width:100%}}
+/* Reproductor propio */
+.vp{position:relative;aspect-ratio:16/9;max-width:100%;background:#000;border-radius:var(--r);overflow:hidden;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.vp.fs{border-radius:0}
+.vp.pfs{position:fixed;inset:0;z-index:70;aspect-ratio:auto;border-radius:0}
+.vp .yt{position:absolute;inset:0;pointer-events:none}
+.vp .yt iframe{width:100%;height:100%;border:0}
+.vp .shield{position:absolute;inset:0;cursor:pointer;background:transparent}
+.vp .cover{position:absolute;inset:0;display:grid;place-items:center;align-content:center;gap:12px;background:radial-gradient(circle at 80% 15%,rgba(255,106,19,.35) 0 22%,transparent 23%),linear-gradient(160deg,#211a16,#0d0b0a);color:#fff;text-align:center;padding:24px;cursor:pointer;transition:opacity .25s}
+.vp .cover.dim{background:rgba(13,11,10,.72)}
+.vp .cover[hidden]{display:none}
+.vp .cover b{font-family:var(--display);font-size:clamp(18px,3vw,28px);max-width:26ch;text-wrap:balance}
+.vp .cover small{color:rgba(255,255,255,.7)}
+.vp .bigplay{width:76px;height:76px;border-radius:50%;background:var(--accent);display:grid;place-items:center;box-shadow:0 10px 30px rgba(255,106,19,.45);transition:transform .2s}
+.vp .cover:hover .bigplay{transform:scale(1.07)}
+.vp .bigplay::before{content:"";border-left:24px solid var(--accent-ink);border-top:14px solid transparent;border-bottom:14px solid transparent;margin-left:6px}
+.vp .bar{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:10px;padding:28px 12px 10px;background:linear-gradient(transparent,rgba(0,0,0,.75));color:#fff;transition:opacity .25s}
+.vp.idle .bar{opacity:0}
+.vp .bar button{background:none;border:0;color:#fff;width:34px;height:34px;display:grid;place-items:center;border-radius:8px;flex:none;padding:0}
+.vp .bar button:hover{background:rgba(255,255,255,.14)}
+.vp .bar svg{width:20px;height:20px;fill:currentColor}
+.vp .time{font-family:var(--mono);font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.vp .seek{flex:1;min-width:0;height:18px;display:flex;align-items:center;cursor:pointer;position:relative}
+.vp .seek .rail{position:absolute;left:0;right:0;height:4px;border-radius:9px;background:rgba(255,255,255,.25)}
+.vp .seek .buf{position:absolute;left:0;height:4px;border-radius:9px;background:rgba(255,255,255,.35)}
+.vp .seek .fill{position:absolute;left:0;height:4px;border-radius:9px;background:var(--accent)}
+.vp .seek .knob{position:absolute;width:14px;height:14px;border-radius:50%;background:var(--accent);transform:translateX(-50%);box-shadow:0 0 0 3px rgba(255,106,19,.25)}
+.vp .seek:hover .rail,.vp .seek:hover .fill,.vp .seek:hover .buf{height:6px}
+.vp .speed{font-family:var(--mono);font-size:12px;width:auto!important;padding:0 8px!important}
+.vp .vol{width:70px;accent-color:var(--accent)}
+.vp .loading{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}
+@media (max-width:560px){.vp .vol,.vp .speed{display:none}.vp .bar{gap:6px;padding:24px 8px 8px}}
+
 .lessonhead{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-top:18px;flex-wrap:wrap}
 .lessonhead h2{font-size:24px}
 .lessonhead .mono{color:var(--accent-text)}
@@ -514,13 +553,13 @@ let booted=false, recovery=false;
 
 async function loadCourses(){
   const {data,error}=await sb.from('cursos')
-    .select('id,numero,categoria,titulo,descripcion,precio_usd,nivel,orden,ls_checkout_url,modulos(id,titulo,orden,lecciones(id,titulo,duracion,descripcion,orden))')
+    .select('id,numero,categoria,titulo,subtitulo,descripcion,precio_usd,nivel,orden,ls_checkout_url,aprendes,incluye,modulos(id,titulo,orden,lecciones(id,titulo,duracion,descripcion,orden))')
     .order('orden');
   if(error){ console.error(error); S.loadError=true; return; }
   const byOrden=(a,b)=>a.orden-b.orden;
   COURSES=data.map(c=>({
-    id:c.id, n:c.numero||'', cat:c.categoria||'', title:c.titulo, sub:c.descripcion||'',
-    price:Number(c.precio_usd)||0, level:c.nivel||'', checkout:c.ls_checkout_url||'',
+    id:c.id, n:c.numero||'', cat:c.categoria||'', title:c.titulo, sub:c.subtitulo||c.descripcion||'', about:c.subtitulo?(c.descripcion||''):'', incl:(c.incluye&&c.incluye.length)?c.incluye:null,
+    price:Number(c.precio_usd)||0, level:c.nivel||'', checkout:c.ls_checkout_url||'', learn:(c.aprendes&&c.aprendes.length)?c.aprendes:null,
     modules:(c.modulos||[]).sort(byOrden).map(m=>({id:m.id, t:m.titulo,
       lessons:(m.lecciones||[]).sort(byOrden).map(l=>({id:String(l.id), t:l.titulo, d:l.duracion||'', desc:l.descripcion||''}))}))
   }));
@@ -571,6 +610,7 @@ window.addEventListener('hashchange',()=>{render();window.scrollTo(0,0)});
 
 function render(){
   const h = location.hash.slice(1);
+  if(!h.startsWith('aprender-')) destroyPlayer();
   renderAuth();
   $('#nav-cursos').setAttribute('aria-current', String(!h || h==='cursos' || h.startsWith('curso-')));
   $('#nav-mis').setAttribute('aria-current', String(h==='mis-cursos' || h.startsWith('aprender-')));
@@ -623,7 +663,7 @@ function renderCatalog(){
           <div class="cbody">
             <h3>${esc(c.title)}</h3>
             <p>${esc(c.sub)}</p>
-            <div class="meta"><span>${c.modules.length} módulos</span><span>${totalLessons(c)} clases</span><span>${c.level}</span></div>
+            <div class="meta"><span>${c.modules.length} ${c.modules.length===1?'módulo':'módulos'}</span><span>${totalLessons(c)} clases</span><span>${c.level}</span></div>
           </div>
           <div class="cfoot">
             <span class="price">${fmtPrice(c.price)}${c.price?'<small>USD</small>':''}</span>
@@ -747,7 +787,8 @@ function renderDetail(c){
         <span class="mono" style="color:var(--accent-text)">${esc(c.cat)} · ${c.level}</span>
         <h1>${esc(c.title)}</h1>
         <p class="lead">${esc(c.sub)}</p>
-        <div class="learn">${LEARN.map(l=>`<div>${esc(l)}</div>`).join('')}</div>
+        ${c.about?`<p style="margin-top:12px;max-width:60ch">${esc(c.about)}</p>`:''}
+        <div class="learn">${(c.learn||LEARN).map(l=>`<div>${esc(l)}</div>`).join('')}</div>
         <div class="modules">
           <h2>Contenido del curso</h2>
           ${c.modules.map((m,i)=>`
@@ -763,10 +804,11 @@ function renderDetail(c){
           <span class="price">${fmtPrice(c.price)}${c.price?'<small>USD · pago único</small>':''}</span>
           <button class="btn lg block" id="buy">${own?'Ir al curso':c.price?'Comprar ahora':'Inscribirme gratis'}</button>
           <ul class="incl">
+            ${c.incl?c.incl.map(x=>`<li>${esc(x)}</li>`).join(''):`
             <li>${totalLessons(c)} clases en video (~${Math.round(totalMin(c)/60*10)/10} h)</li>
             <li>${c.modules.length} módulos</li>
             <li>Acceso desde celular y computador</li>
-            <li>Material descargable (agrega el tuyo)</li>
+            <li>Material descargable (agrega el tuyo)</li>`}
           </ul>
         </div>
       </aside>
@@ -910,8 +952,108 @@ function renderMine(){
   const e2=$('#e2'); if(e2) e2.onclick=()=>go('cursos');
 }
 
+/* ---------- Reproductor de video propio ---------- */
+let ytReady=null;
+function loadYT(){
+  if(ytReady) return ytReady;
+  ytReady=new Promise(res=>{
+    if(window.YT&&window.YT.Player) return res();
+    const prev=window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady=()=>{ prev&&prev(); res(); };
+    const t=document.createElement('script'); t.src='https://www.youtube.com/iframe_api'; document.head.appendChild(t);
+  });
+  return ytReady;
+}
+const ICON={
+  play:'<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>',
+  pause:'<svg viewBox="0 0 24 24"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>',
+  vol:'<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4z"/></svg>',
+  mute:'<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.6 3 2.7-2.7-1.4-1.4-2.7 2.7-2.7-2.7-1.4 1.4 2.7 2.7-2.7 2.7 1.4 1.4 2.7-2.7 2.7 2.7 1.4-1.4z"/></svg>',
+  fs:'<svg viewBox="0 0 24 24"><path d="M5 5h5v2H7v3H5zm9 0h5v5h-2V7h-3zM5 14h2v3h3v2H5zm12 3v-3h2v5h-5v-2z"/></svg>',
+  back:'<svg viewBox="0 0 24 24"><path d="M11 6V2L5 8l6 6v-4c3.3 0 6 2.7 6 6s-2.7 6-6 6-6-2.7-6-6H3c0 4.4 3.6 8 8 8s8-3.6 8-8-3.6-8-8-8z"/><text x="8.3" y="18.5" font-size="6.5" font-weight="700" fill="currentColor">10</text></svg>'
+};
+const fmtT=s=>{s=Math.max(0,Math.floor(s||0));const m=Math.floor(s/60),x=s%60;return m+':'+String(x).padStart(2,'0')};
+function ytId(u){
+  u=String(u||'');
+  if(u.startsWith('youtube:')) return u.slice(8);
+  const m=u.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/); return m?m[1]:null;
+}
+let activePlayer=null;
+function destroyPlayer(){ if(activePlayer){ try{activePlayer.destroy()}catch(e){} activePlayer=null; } }
+
+function mountYouTube(box, vid, title, onEnded){
+  box.outerHTML=`<div class="vp idle" id="vp">
+    <div class="yt"><div id="ytp"></div></div>
+    <div class="shield" id="vp-shield"></div>
+    <div class="cover" id="vp-cover"><div class="bigplay" aria-hidden="true"></div><b>${esc(title)}</b><small>Toca para reproducir</small></div>
+    <div class="bar" id="vp-bar">
+      <button id="vp-play" aria-label="Reproducir">${ICON.play}</button>
+      <button id="vp-back" aria-label="Retroceder 10 segundos">${ICON.back}</button>
+      <span class="time" id="vp-time">0:00 / 0:00</span>
+      <div class="seek" id="vp-seek" role="slider" aria-label="Posición del video" tabindex="0"><div class="rail"></div><div class="buf" id="vp-buf"></div><div class="fill" id="vp-fill"></div><div class="knob" id="vp-knob"></div></div>
+      <button id="vp-mute" aria-label="Silenciar">${ICON.vol}</button>
+      <input class="vol" id="vp-vol" type="range" min="0" max="100" value="100" aria-label="Volumen">
+      <button class="speed" id="vp-speed" aria-label="Velocidad">1x</button>
+      <button id="vp-fs" aria-label="Pantalla completa">${ICON.fs}</button>
+    </div>
+  </div>`;
+  const root=$('#vp'), cover=$('#vp-cover');
+  let p=null, ready=false, dur=0, tick=null, idleT=null, dragging=false, started=false;
+  const speeds=[1,1.25,1.5,2]; let si=0;
+  const wake=()=>{root.classList.remove('idle');clearTimeout(idleT);idleT=setTimeout(()=>{ if(p&&ready&&p.getPlayerState()===1) root.classList.add('idle'); },2500)};
+  root.addEventListener('pointermove',wake); root.addEventListener('touchstart',wake,{passive:true});
+  const paint=()=>{
+    if(!p||!ready) return;
+    dur=p.getDuration()||dur; const t=dragging?dragging:p.getCurrentTime();
+    const f=dur?Math.min(1,t/dur):0;
+    $('#vp-fill').style.width=(f*100)+'%'; $('#vp-knob').style.left=(f*100)+'%';
+    $('#vp-buf').style.width=((p.getVideoLoadedFraction()||0)*100)+'%';
+    $('#vp-time').textContent=fmtT(t)+' / '+fmtT(dur);
+  };
+  const setPlayingUI=on=>{ $('#vp-play').innerHTML=on?ICON.pause:ICON.play; $('#vp-play').setAttribute('aria-label',on?'Pausar':'Reproducir'); };
+  const toggle=()=>{ if(!p||!ready) return; const st=p.getPlayerState(); if(st===1||st===3){p.pauseVideo()}else{p.playVideo()} };
+  cover.onclick=()=>{ if(!ready){ cover.querySelector('small').textContent='Cargando…'; return; } p.playVideo(); };
+  $('#vp-shield').onclick=toggle;
+  $('#vp-play').onclick=toggle;
+  $('#vp-back').onclick=()=>{ if(p&&ready){ p.seekTo(Math.max(0,p.getCurrentTime()-10),true); paint(); } };
+  $('#vp-mute').onclick=()=>{ if(!p||!ready) return; if(p.isMuted()){p.unMute();$('#vp-mute').innerHTML=ICON.vol}else{p.mute();$('#vp-mute').innerHTML=ICON.mute} };
+  $('#vp-vol').oninput=e=>{ if(!p||!ready) return; p.setVolume(+e.target.value); if(+e.target.value===0){p.mute();$('#vp-mute').innerHTML=ICON.mute}else{p.unMute();$('#vp-mute').innerHTML=ICON.vol} };
+  $('#vp-speed').onclick=()=>{ if(!p||!ready) return; si=(si+1)%speeds.length; p.setPlaybackRate(speeds[si]); $('#vp-speed').textContent=speeds[si]+'x'; };
+  const seekEl=$('#vp-seek');
+  const posFrom=e=>{ const r=seekEl.getBoundingClientRect(); const x=(e.touches?e.touches[0].clientX:e.clientX)-r.left; return Math.max(0,Math.min(1,x/r.width)); };
+  const startDrag=e=>{ if(!ready) return; dragging=posFrom(e)*dur; paint(); const mv=ev=>{dragging=posFrom(ev)*dur;paint()}; const up=()=>{ p.seekTo(dragging,true); dragging=false; window.removeEventListener('pointermove',mv); window.removeEventListener('pointerup',up); }; window.addEventListener('pointermove',mv); window.addEventListener('pointerup',up); };
+  seekEl.addEventListener('pointerdown',startDrag);
+  seekEl.addEventListener('keydown',e=>{ if(!ready) return; if(e.key==='ArrowRight'){p.seekTo(p.getCurrentTime()+5,true)} if(e.key==='ArrowLeft'){p.seekTo(Math.max(0,p.getCurrentTime()-5),true)} });
+  const isFs=()=>document.fullscreenElement===root||document.webkitFullscreenElement===root||root.classList.contains('pfs');
+  $('#vp-fs').onclick=()=>{
+    if(isFs()){ if(document.fullscreenElement||document.webkitFullscreenElement){(document.exitFullscreen||document.webkitExitFullscreen).call(document)} root.classList.remove('pfs','fs'); return; }
+    const rq=root.requestFullscreen||root.webkitRequestFullscreen;
+    if(rq){ rq.call(root).then?.(()=>root.classList.add('fs')).catch?.(()=>root.classList.add('pfs')); } else root.classList.add('pfs');
+  };
+  document.addEventListener('fullscreenchange',()=>{ if(!document.fullscreenElement) root.classList.remove('fs'); });
+  root.addEventListener('keydown',e=>{ if(e.key===' '&&e.target===root){e.preventDefault();toggle()} });
+  root.tabIndex=0;
+  loadYT().then(()=>{
+    if(!document.body.contains(root)) return;
+    p=new YT.Player('ytp',{videoId:vid,host:'https://www.youtube-nocookie.com',
+      playerVars:{controls:0,disablekb:1,fs:0,modestbranding:1,rel:0,iv_load_policy:3,playsinline:1,cc_load_policy:0,origin:location.origin},
+      events:{
+        onReady:()=>{ ready=true; dur=p.getDuration(); paint(); if(cover.querySelector('small').textContent==='Cargando…') p.playVideo(); },
+        onStateChange:e=>{
+          const st=e.data;
+          if(st===1){ started=true; cover.hidden=true; setPlayingUI(true); clearInterval(tick); tick=setInterval(paint,250); wake(); }
+          else { setPlayingUI(false); paint(); root.classList.remove('idle'); }
+          if(st===2){ cover.hidden=false; cover.classList.add('dim'); cover.querySelector('b').textContent='En pausa'; cover.querySelector('small').textContent='Toca para continuar'; clearInterval(tick); }
+          if(st===0){ clearInterval(tick); cover.hidden=false; cover.classList.add('dim'); cover.querySelector('b').textContent='¡Terminaste esta clase!'; cover.querySelector('small').textContent='Toca para verla de nuevo'; onEnded&&onEnded(); }
+        }
+      }});
+    activePlayer={destroy:()=>{clearInterval(tick);try{p.destroy()}catch(e){}}};
+  });
+}
+
 /* ---------- Reproductor ---------- */
 function renderPlayer(id){
+  destroyPlayer();
   const c=byId(id);
   if(!c||!owned(id)) return c?renderDetail(c):renderCatalog();
   const flat=[]; c.modules.forEach((m,mi)=>m.lessons.forEach(l=>flat.push({...l,key:l.id,m:mi})));
@@ -925,8 +1067,8 @@ function renderPlayer(id){
     <button class="back" id="back">← Mis cursos</button>
     <div class="player">
       <div>
-        <div class="video" style="--p:${isDone?100:0}%">
-          <div><div class="play" aria-hidden="true"></div><b>${esc(L.t)}</b><small>Aquí va tu video (Vimeo, Bunny Stream o similar)</small></div>
+        <div class="video" id="vbox" style="--p:${isDone?100:0}%">
+          <div><div class="play" aria-hidden="true"></div><b>${esc(L.t)}</b><small>Cargando video…</small></div>
         </div>
         <div class="lessonhead">
           <div><span class="mono">${esc(c.modules[L.m].t)} · Clase ${idx+1} de ${flat.length}</span><h2 style="margin-top:6px">${esc(L.t)}</h2></div>
@@ -936,6 +1078,7 @@ function renderPlayer(id){
           </div>
         </div>
         <div class="notes">${L.desc?esc(L.desc):'Descripción de la clase, recursos y enlaces de descarga. Reemplaza este texto con el material de cada lección.'}</div>
+        <div class="mats" id="mats" hidden></div>
       </div>
       <aside class="toc">
         <div class="top"><b>${esc(c.title)}</b><div class="prog"><i style="width:${pct(c)}%"></i></div><span class="mono" style="color:var(--muted)">${pct(c)}% · ${done.length}/${flat.length} clases</span></div>
@@ -946,22 +1089,47 @@ function renderPlayer(id){
   </div>`;
   $('#back').onclick=()=>go('mis-cursos');
   document.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{currentLesson[id]=b.dataset.k;renderPlayer(id)});
-  $('#mark').onclick=async()=>{
-    const b=$('#mark'); b.disabled=true;
-    if(S.done.has(cur)){
+  const refresh=()=>{
+    const d=S.done.has(cur), n=doneList(id).length;
+    $('#mark').textContent=d?'✓ Completada':'Marcar como completada';
+    const dot=document.querySelector(`.lbtn[data-k="${cur}"] .dot`); if(dot){dot.classList.toggle('done',d);dot.textContent=d?'✓':''}
+    const top=document.querySelector('.toc .top'); if(top){top.querySelector('.prog i').style.width=pct(c)+'%';top.querySelector('.mono').textContent=`${pct(c)}% · ${n}/${flat.length} clases`}
+  };
+  const setDone=async(want,quiet)=>{
+    const b=$('#mark'); if(!b) return; b.disabled=true;
+    if(!want && S.done.has(cur)){
       const {error}=await sb.from('progreso').delete().eq('leccion_id',Number(cur));
       if(error) toast('No se pudo guardar. Intenta de nuevo.'); else S.done.delete(cur);
-    } else {
+    } else if(want && !S.done.has(cur)){
       const {error}=await sb.from('progreso').insert({usuario_id:S.user.id, leccion_id:Number(cur)});
       if(error && error.code!=='23505') toast('No se pudo guardar. Intenta de nuevo.');
       else { S.done.add(cur); toast(pct(c)===100?'¡Terminaste el curso!':'Clase completada'); }
     }
-    renderPlayer(id);
+    b.disabled=false; refresh();
   };
+  $('#mark').onclick=()=>setDone(!S.done.has(cur));
+  sb.from('lecciones_material').select('titulo,archivo').eq('leccion_id',Number(cur)).order('orden').then(({data})=>{
+    const box=$('#mats'); if(!box || currentLesson[id]!==cur || !data || !data.length) return;
+    box.innerHTML=`<h3>Material de la clase</h3>`+data.map((m,i)=>`
+      <div class="mat"><span class="ico">${esc((m.archivo.split('.').pop()||'').toUpperCase())}</span>
+        <span class="nm">${esc(m.titulo)}<small>Disponible para descargar</small></span>
+        <button class="btn" data-mat="${i}">Descargar ↓</button></div>`).join('');
+    box.hidden=false;
+    box.querySelectorAll('[data-mat]').forEach(b=>b.onclick=async()=>{
+      const m=data[+b.dataset.mat]; const t=b.innerHTML; b.disabled=true; b.innerHTML='<span class="spin"></span>';
+      const {data:u,error}=await sb.storage.from('materiales').createSignedUrl(m.archivo,300,{download:true});
+      b.disabled=false; b.innerHTML=t;
+      if(error||!u){ console.error(error); return toast('No se pudo descargar. Intenta de nuevo.'); }
+      const a=document.createElement('a'); a.href=u.signedUrl; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+    });
+  });
   sb.from('lecciones_video').select('video_url').eq('leccion_id',Number(cur)).maybeSingle().then(({data})=>{
-    const v=$('.video');
-    if(v && data && data.video_url && currentLesson[id]===cur)
-      v.innerHTML=`<iframe src="${esc(data.video_url)}" title="${esc(L.t)}" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`;
+    const v=$('#vbox');
+    if(!v || currentLesson[id]!==cur) return;
+    if(!data || !data.video_url){ v.querySelector('small').textContent='Este video estará disponible muy pronto.'; return; }
+    const yid=ytId(data.video_url);
+    if(yid) mountYouTube(v, yid, L.t, ()=>setDone(true,true));
+    else v.innerHTML=`<iframe src="${esc(data.video_url)}" title="${esc(L.t)}" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`;
   });
   const nx=$('#next'); if(nx) nx.onclick=()=>{currentLesson[id]=flat[idx+1].key;renderPlayer(id);window.scrollTo(0,0)};
 }
@@ -1148,6 +1316,8 @@ document.addEventListener('pointerdown',e=>{
   sp.className='ripple'; sp.style.cssText=`width:${s}px;height:${s}px;left:${e.clientX-r.left-s/2}px;top:${e.clientY-r.top-s/2}px`;
   b.appendChild(sp); setTimeout(()=>sp.remove(),650);
 });
+document.addEventListener('contextmenu',e=>e.preventDefault());
+document.addEventListener('dragstart',e=>{ if(e.target.closest&&e.target.closest('.vp')) e.preventDefault(); });
 $('#logo').onclick=()=>{document.documentElement.classList.remove('calm');go('cursos')};
 $('#nav-cursos').onclick=()=>go('cursos');
 $('#nav-mis').onclick=()=>go('mis-cursos');
