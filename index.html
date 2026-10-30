@@ -150,8 +150,8 @@ details.mod li span:last-child{font-family:var(--mono);font-size:12px}
 .vp{position:relative;aspect-ratio:16/9;max-width:100%;background:#000;border-radius:var(--r);overflow:hidden;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .vp.fs{border-radius:0}
 .vp.pfs{position:fixed;inset:0;z-index:70;aspect-ratio:auto;border-radius:0}
-.vp .yt{position:absolute;inset:0;pointer-events:none}
-.vp .yt iframe{width:100%;height:100%;border:0}
+.vp .yt{position:absolute;left:0;right:0;top:-100%;height:300%;pointer-events:none}
+.vp .yt iframe{width:100%;height:100%;border:0;display:block}
 .vp .shield{position:absolute;inset:0;cursor:pointer;background:transparent}
 .vp .cover{position:absolute;inset:0;display:grid;place-items:center;align-content:center;gap:12px;background:radial-gradient(circle at 80% 15%,rgba(255,106,19,.35) 0 22%,transparent 23%),linear-gradient(160deg,#211a16,#0d0b0a);color:#fff;text-align:center;padding:24px;cursor:pointer;transition:opacity .25s}
 .vp .cover.dim{background:rgba(13,11,10,.72)}
@@ -999,6 +999,7 @@ function mountYouTube(box, vid, title, onEnded){
   </div>`;
   const root=$('#vp'), cover=$('#vp-cover');
   let p=null, ready=false, dur=0, tick=null, idleT=null, dragging=false, started=false;
+  const noCC=()=>{ try{ p.unloadModule('captions'); p.unloadModule('cc'); p.setOption('captions','track',{}); }catch(e){} };
   const speeds=[1,1.25,1.5,2]; let si=0;
   const wake=()=>{root.classList.remove('idle');clearTimeout(idleT);idleT=setTimeout(()=>{ if(p&&ready&&p.getPlayerState()===1) root.classList.add('idle'); },2500)};
   root.addEventListener('pointermove',wake); root.addEventListener('touchstart',wake,{passive:true});
@@ -1036,12 +1037,12 @@ function mountYouTube(box, vid, title, onEnded){
   loadYT().then(()=>{
     if(!document.body.contains(root)) return;
     p=new YT.Player('ytp',{videoId:vid,host:'https://www.youtube-nocookie.com',
-      playerVars:{controls:0,disablekb:1,fs:0,modestbranding:1,rel:0,iv_load_policy:3,playsinline:1,cc_load_policy:0,origin:location.origin},
+      playerVars:{controls:0,disablekb:1,fs:0,modestbranding:1,rel:0,iv_load_policy:3,playsinline:1,cc_load_policy:0,cc_lang_pref:'xx',hl:'es',showinfo:0,origin:location.origin},
       events:{
-        onReady:()=>{ ready=true; dur=p.getDuration(); paint(); if(cover.querySelector('small').textContent==='Cargando…') p.playVideo(); },
+        onReady:()=>{ ready=true; dur=p.getDuration(); noCC(); paint(); if(cover.querySelector('small').textContent==='Cargando…') p.playVideo(); },
         onStateChange:e=>{
           const st=e.data;
-          if(st===1){ started=true; cover.hidden=true; setPlayingUI(true); clearInterval(tick); tick=setInterval(paint,250); wake(); }
+          if(st===1){ noCC(); started=true; cover.hidden=true; setPlayingUI(true); clearInterval(tick); tick=setInterval(paint,250); wake(); }
           else { setPlayingUI(false); paint(); root.classList.remove('idle'); }
           if(st===2){ cover.hidden=false; cover.classList.add('dim'); cover.querySelector('b').textContent='En pausa'; cover.querySelector('small').textContent='Toca para continuar'; clearInterval(tick); }
           if(st===0){ clearInterval(tick); cover.hidden=false; cover.classList.add('dim'); cover.querySelector('b').textContent='¡Terminaste esta clase!'; cover.querySelector('small').textContent='Toca para verla de nuevo'; onEnded&&onEnded(); }
@@ -1108,20 +1109,21 @@ function renderPlayer(id){
     b.disabled=false; refresh();
   };
   $('#mark').onclick=()=>setDone(!S.done.has(cur));
-  sb.from('lecciones_material').select('titulo,archivo').eq('leccion_id',Number(cur)).order('orden').then(({data})=>{
-    const box=$('#mats'); if(!box || currentLesson[id]!==cur || !data || !data.length) return;
-    box.innerHTML=`<h3>Material de la clase</h3>`+data.map((m,i)=>`
+  sb.from('lecciones_material').select('titulo,archivo').eq('leccion_id',Number(cur)).order('orden').then(async({data,error})=>{
+    const box=$('#mats'); if(!box || currentLesson[id]!==cur) return;
+    if(error){ console.error(error); return; }
+    if(!data || !data.length) return;
+    const rows=await Promise.all(data.map(async m=>{
+      const nice=m.titulo.replace(/\s*\(PDF\)\s*/i,'').replace(/[^\wáéíóúñÁÉÍÓÚÑ ]+/g,'').trim().replace(/\s+/g,'-')+'.'+(m.archivo.split('.').pop()||'pdf');
+      const r=await sb.storage.from('materiales').createSignedUrl(m.archivo,3600,{download:nice});
+      if(r.error) console.error('Material', m.archivo, r.error);
+      return {...m, url:r.data&&r.data.signedUrl, err:r.error&&(r.error.message||String(r.error))};
+    }));
+    box.innerHTML=`<h3>Material de la clase</h3>`+rows.map(m=>`
       <div class="mat"><span class="ico">${esc((m.archivo.split('.').pop()||'').toUpperCase())}</span>
-        <span class="nm">${esc(m.titulo)}<small>Disponible para descargar</small></span>
-        <button class="btn" data-mat="${i}">Descargar ↓</button></div>`).join('');
+        <span class="nm">${esc(m.titulo)}<small>${m.url?'Disponible para descargar':'No encontramos el archivo. Vuelve a intentarlo en un momento.'}</small></span>
+        ${m.url?`<a class="btn" href="${esc(m.url)}" download>Descargar ↓</a>`:''}</div>`).join('');
     box.hidden=false;
-    box.querySelectorAll('[data-mat]').forEach(b=>b.onclick=async()=>{
-      const m=data[+b.dataset.mat]; const t=b.innerHTML; b.disabled=true; b.innerHTML='<span class="spin"></span>';
-      const {data:u,error}=await sb.storage.from('materiales').createSignedUrl(m.archivo,300,{download:true});
-      b.disabled=false; b.innerHTML=t;
-      if(error||!u){ console.error(error); return toast('No se pudo descargar. Intenta de nuevo.'); }
-      const a=document.createElement('a'); a.href=u.signedUrl; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
-    });
   });
   sb.from('lecciones_video').select('video_url').eq('leccion_id',Number(cur)).maybeSingle().then(({data})=>{
     const v=$('#vbox');
