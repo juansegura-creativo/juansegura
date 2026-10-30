@@ -208,6 +208,43 @@ input[readonly]{color:var(--fg);background:var(--surface-2)}
 .gw-foot{display:flex;gap:6px;align-items:center;justify-content:center;font-size:12px;color:var(--muted)}
 .spin{width:16px;height:16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .7s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
+/* Agendar auditoría */
+.show-s{display:none}
+.navcta{color:var(--accent-text)!important;font-weight:600}
+.navcta[aria-current="true"],.navcta:hover{background:var(--accent-soft)!important}
+.agenda{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,460px);gap:40px;padding-block:40px 56px;align-items:start}
+.agenda h1{font-size:clamp(32px,5vw,52px);margin-top:12px}
+.agenda .lead{color:var(--muted);font-size:17px;margin-top:14px;max-width:56ch}
+.tracks{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-top:28px}
+.track{border:1px solid var(--line);border-radius:var(--r);padding:20px;display:grid;gap:10px;align-content:start;background:var(--surface)}
+.track h3{font-size:19px}
+.track ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.track li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:6px;font-size:14px;color:var(--muted)}
+.track li::before{content:"✓";color:var(--accent-text);font-weight:800}
+.howto{list-style:none;padding:0;margin:28px 0 0;display:grid;gap:0;counter-reset:h}
+.howto li{counter-increment:h;display:grid;grid-template-columns:40px minmax(0,1fr);gap:12px;padding:14px 0;border-top:1px solid var(--line)}
+.howto li::before{content:counter(h);width:32px;height:32px;border-radius:50%;background:var(--fg);color:#fff;display:grid;place-items:center;font-family:var(--display);font-weight:800}
+.howto b{display:block}
+.howto span{color:var(--muted);font-size:14px}
+.bookcard{position:sticky;top:calc(env(safe-area-inset-top,0px) + 84px);border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow);padding:24px;display:grid;gap:14px}
+.bookcard h2{font-size:24px}
+.bookcard .sub{color:var(--muted);font-size:14px;margin-top:-6px}
+.bookcard label{display:grid;gap:6px;font-size:13px;color:var(--muted)}
+.bookcard input,.bookcard textarea{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px;color:var(--fg);font:inherit;font-size:15px}
+.bookcard textarea{min-height:84px;resize:vertical}
+.bookcard input:focus,.bookcard textarea:focus{border-color:var(--accent);outline:none}
+.topics{display:flex;gap:8px;flex-wrap:wrap}
+.topics input{position:absolute;opacity:0;pointer-events:none}
+.topics label{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:14px;color:var(--fg);cursor:pointer;transition:all .2s}
+.topics label:has(input:checked){border-color:var(--accent);background:var(--accent-soft);font-weight:600}
+.topics label:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+.calwrap{border-radius:12px;overflow:hidden;border:1px solid var(--line);background:#fff}
+.calwrap iframe{display:block;width:100%;height:640px;border:0}
+.stepper{display:flex;gap:6px;font-size:12px;font-weight:600;color:var(--muted)}
+.stepper span{flex:1;border-top:3px solid var(--line);padding-top:6px}
+.stepper span.on{border-color:var(--accent);color:var(--fg)}
+@media (max-width:900px){.agenda{grid-template-columns:1fr}.bookcard{position:static}}
+@media (max-width:560px){.tracks{grid-template-columns:1fr}.agenda{padding-block:24px 40px}.bookcard{padding:18px}}
 .boot{padding-block:120px;display:flex;gap:10px;justify-content:center;align-items:center;color:var(--muted)}
 /* Pantalla de carga */
 #loader{position:fixed;inset:0;z-index:60;background:var(--bg);display:grid;place-content:center;justify-items:center;gap:22px;padding:24px;text-align:center;transition:opacity .45s ease,visibility .45s;perspective:600px}
@@ -331,7 +368,10 @@ a.btn{text-decoration:none}
   .learn{grid-template-columns:1fr}
 }
 @media (max-width:560px){
-  .navbtn.hide-s{display:none}
+  .navbtn.hide-s,.hide-s{display:none}
+  .show-s{display:inline}
+  nav.links{gap:2px}
+  .navbtn{padding:8px 10px}
   .logo span{display:none}
   .hero{padding-block:32px 24px}
 }
@@ -438,6 +478,7 @@ a.btn{text-decoration:none}
     <nav class="links">
       <button class="navbtn hide-s" id="nav-cursos">Cursos</button>
       <button class="navbtn" id="nav-mis">Mis cursos</button>
+      <button class="navbtn navcta" id="nav-agendar"><span class="hide-s">Agendar auditoría</span><span class="show-s">Auditoría</span></button>
     </nav>
     <div id="authslot"></div>
   </div>
@@ -533,6 +574,8 @@ function render(){
   renderAuth();
   $('#nav-cursos').setAttribute('aria-current', String(!h || h==='cursos' || h.startsWith('curso-')));
   $('#nav-mis').setAttribute('aria-current', String(h==='mis-cursos' || h.startsWith('aprender-')));
+  $('#nav-agendar').setAttribute('aria-current', String(h==='agendar'));
+  if(h==='agendar') return renderAgenda();
   if(h==='mis-cursos') return renderMine();
   if(h.startsWith('aprender-')) return renderPlayer(h.replace('aprender-',''));
   if(h.startsWith('curso-') && byId(h)) return renderDetail(byId(h));
@@ -735,6 +778,102 @@ function renderDetail(c){
     if(!user()){pendingBuy=c.id;return openLogin('Crea tu cuenta para comprar este curso.')}
     openCheckout(c);
   };
+}
+
+/* ---------- Agendar auditoría ---------- */
+// Pega aquí el enlace "src" del código de Google Calendar (Website embed → Inline booking page)
+const GCAL_EMBED = '';
+
+function renderAgenda(){
+  const u=user();
+  $('#app').innerHTML=`
+  <div class="wrap agenda">
+    <div style="min-width:0">
+      <span class="mono eyebrow">Auditoría gratis · 30 minutos · Google Meet</span>
+      <h1>Revisemos tus redes, tu embudo y tus leads</h1>
+      <p class="lead">Una llamada de 30 minutos donde reviso cómo te encuentran, qué pasa cuando alguien te escribe y en qué punto se te van los clientes. Sales con 3 cambios concretos para aplicar esa misma semana, contrates algo o no.</p>
+      <div class="tracks">
+        <div class="track"><h3>Redes sociales</h3><ul>
+          <li>Tus últimos videos y publicaciones</li>
+          <li>Qué gancho falla en los primeros 2 segundos</li>
+          <li>Qué publicas y con qué constancia</li>
+        </ul></div>
+        <div class="track"><h3>Embudo</h3><ul>
+          <li>El camino desde que te ven hasta que te escriben</li>
+          <li>Qué contenido atrae y cuál cierra</li>
+          <li>En qué paso se cae la gente</li>
+        </ul></div>
+        <div class="track"><h3>Leads</h3><ul>
+          <li>De dónde te llegan los clientes</li>
+          <li>Cómo y qué tan rápido respondes</li>
+          <li>Qué pasa con los que no compran</li>
+        </ul></div>
+      </div>
+      <ol class="howto">
+        <li><div><b>Cuéntame de tu negocio</b><span>Un formulario de 1 minuto para llegar con tu caso revisado.</span></div></li>
+        <li><div><b>Elige día y hora</b><span>Ves mi disponibilidad real y la reservas al instante.</span></div></li>
+        <li><div><b>Nos vemos por Google Meet</b><span>El enlace te llega al correo con la invitación.</span></div></li>
+      </ol>
+    </div>
+    <aside class="bookcard" id="bookcard"></aside>
+  </div>`;
+  bookStep1(u);
+}
+
+const CANALES=['Instagram','TikTok','Facebook','Anuncios pagados','Google','Referidos','Otro'];
+function bookStep1(u){
+  const d=bookStep1.draft||{};
+  const sel=(d.canales||'').split(', ').filter(Boolean);
+  $('#bookcard').innerHTML=`
+    <div class="stepper"><span class="on">1. Tu negocio</span><span>2. Fecha y hora</span></div>
+    <h2>Agenda tu auditoría</h2>
+    <p class="sub">Toma 1 minuto. Con esto reviso tus redes antes de la llamada.</p>
+    <form id="bkform" style="display:grid;gap:12px" novalidate>
+      <label for="bk-nombre">Nombre<input type="text" id="bk-nombre" autocomplete="name" value="${esc(d.nombre||(u?u.name:''))}"></label>
+      <label for="bk-email">Correo<input type="email" id="bk-email" autocomplete="email" value="${esc(d.email||(u?u.email:''))}"></label>
+      <label for="bk-negocio">Negocio y ciudad<input type="text" id="bk-negocio" placeholder="Ej: Limpieza Sol, Houston" value="${esc(d.negocio||'')}"></label>
+      <label for="bk-enlace">Instagram o página web<input type="text" id="bk-enlace" placeholder="@tunegocio o tunegocio.com" value="${esc(d.enlace||'')}"></label>
+      <div style="display:grid;gap:6px"><span style="font-size:13px;color:var(--muted)">¿Por dónde te llegan los clientes hoy? <span style="opacity:.7">(marca todas las que apliquen)</span></span>
+        <div class="topics">
+          ${CANALES.map((t,i)=>`<label for="bk-c${i}"><input type="checkbox" name="bk-canal" id="bk-c${i}" value="${t}" ${sel.includes(t)?'checked':''}>${t}</label>`).join('')}
+        </div>
+      </div>
+      <label for="bk-obj"><span>¿Qué te gustaría lograr? <span style="opacity:.7">(opcional)</span></span><textarea id="bk-obj" placeholder="Ej: publico 3 videos a la semana, me escriben pero casi nadie compra">${esc(d.objetivo||'')}</textarea></label>
+      <p class="err" id="bk-err"></p>
+      <button class="btn lg block" type="submit" id="bk-btn">Elegir fecha y hora <span class="arr">→</span></button>
+    </form>`;
+  $('#bkform').onsubmit=async e=>{
+    e.preventDefault();
+    const v={
+      nombre:$('#bk-nombre').value.trim(), email:$('#bk-email').value.trim().toLowerCase(),
+      negocio:$('#bk-negocio').value.trim(), enlace:$('#bk-enlace').value.trim(),
+      canales:[...document.querySelectorAll('input[name="bk-canal"]:checked')].map(x=>x.value).join(', '),
+      objetivo:$('#bk-obj').value.trim()
+    };
+    bookStep1.draft=v;
+    const err=$('#bk-err'); err.textContent='';
+    if(!v.nombre) return err.textContent='Escribe tu nombre.';
+    if(!/^\S+@\S+\.\S+$/.test(v.email)) return err.textContent='Escribe un correo válido.';
+    if(!v.negocio) return err.textContent='Escribe el nombre de tu negocio.';
+    if(!v.enlace) return err.textContent='Escribe tu Instagram o página web para revisarla antes de la llamada.';
+    const b=$('#bk-btn'); b.disabled=true; b.innerHTML='<span class="spin"></span> Un momento…';
+    const {error}=await sb.from('solicitudes_auditoria').insert({...v, usuario_id:u?u.id:null});
+    if(error){ console.error(error); b.disabled=false; b.innerHTML='Elegir fecha y hora <span class="arr">→</span>'; return err.textContent='No pudimos guardar tus datos. Revisa tu conexión e intenta de nuevo.'; }
+    bookStep2(u);
+  };
+}
+
+function bookStep2(u){
+  $('#bookcard').innerHTML=`
+    <div class="stepper"><span class="on">1. Tu negocio</span><span class="on">2. Fecha y hora</span></div>
+    <h2>Elige día y hora</h2>
+    <p class="sub">Usa el mismo correo que escribiste para que te llegue la invitación con el enlace de Meet.</p>
+    ${GCAL_EMBED
+      ? `<div class="calwrap"><iframe src="${esc(GCAL_EMBED)}" title="Agenda de Juan Segura" loading="lazy"></iframe></div>
+         <p style="font-size:12px;color:var(--muted);margin:0">Si el calendario no carga, <a href="${esc(GCAL_EMBED.replace('?gv=true',''))}" target="_blank" rel="noopener" style="color:var(--accent-text)">ábrelo en una pestaña nueva</a>.</p>`
+      : `<div class="empty" style="margin:0"><p>Ya recibí tus datos. El calendario estará disponible muy pronto; mientras tanto escríbeme por Instagram y cuadramos la hora.</p><p class="mono" style="color:var(--fg);user-select:all">@creativo.juan</p></div>`}
+    <button class="back" id="bk-back" style="padding:0">← Editar mis datos</button>`;
+  $('#bk-back').onclick=()=>bookStep1(u);
 }
 
 /* ---------- Mis cursos ---------- */
@@ -1006,6 +1145,7 @@ document.addEventListener('pointerdown',e=>{
 $('#logo').onclick=()=>{document.documentElement.classList.remove('calm');go('cursos')};
 $('#nav-cursos').onclick=()=>go('cursos');
 $('#nav-mis').onclick=()=>go('mis-cursos');
+$('#nav-agendar').onclick=()=>go('agendar');
 
 if(sb){
   sb.auth.onAuthStateChange((event, session)=>{
