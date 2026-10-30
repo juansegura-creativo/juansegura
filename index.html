@@ -84,6 +84,9 @@ nav.links{display:flex;gap:4px;margin-left:auto}
 .cover{aspect-ratio:16/10;max-width:100%;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:14px}
 .cover .num{font-family:var(--display);font-weight:800;font-size:72px;line-height:.8;color:var(--cover-fg);position:relative;z-index:1}
 .cover .tag{position:absolute;top:12px;left:12px;z-index:1;background:rgba(13,11,10,.75);color:#fff;border-radius:999px;padding:4px 10px}
+.cover.has-img{background:#0d0b0a}
+.cover.has-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.card:hover .cover.has-img img{transform:scale(1.05)}
 .cover .owned{position:absolute;top:12px;right:12px;z-index:1;background:var(--ok);color:#fff;border-radius:999px;padding:4px 10px}
 .cv0{background:radial-gradient(circle at 85% 20%,var(--accent) 0 28%,transparent 29%),linear-gradient(135deg,#1e1915,#0d0b0a)}
 .cv1{background:repeating-linear-gradient(-45deg,var(--accent) 0 14px,#1a1411 14px 34px)}
@@ -553,12 +556,12 @@ let booted=false, recovery=false;
 
 async function loadCourses(){
   const {data,error}=await sb.from('cursos')
-    .select('id,numero,categoria,titulo,subtitulo,descripcion,precio_usd,nivel,orden,ls_checkout_url,aprendes,incluye,modulos(id,titulo,orden,lecciones(id,titulo,duracion,descripcion,orden))')
+    .select('id,numero,categoria,titulo,subtitulo,portada,descripcion,precio_usd,nivel,orden,ls_checkout_url,aprendes,incluye,modulos(id,titulo,orden,lecciones(id,titulo,duracion,descripcion,orden))')
     .order('orden');
   if(error){ console.error(error); S.loadError=true; return; }
   const byOrden=(a,b)=>a.orden-b.orden;
   COURSES=data.map(c=>({
-    id:c.id, n:c.numero||'', cat:c.categoria||'', title:c.titulo, sub:c.subtitulo||c.descripcion||'', about:c.subtitulo?(c.descripcion||''):'', incl:(c.incluye&&c.incluye.length)?c.incluye:null,
+    id:c.id, n:c.numero||'', cat:c.categoria||'', img:c.portada||'', title:c.titulo, sub:c.subtitulo||c.descripcion||'', about:c.subtitulo?(c.descripcion||''):'', incl:(c.incluye&&c.incluye.length)?c.incluye:null,
     price:Number(c.precio_usd)||0, level:c.nivel||'', checkout:c.ls_checkout_url||'', learn:(c.aprendes&&c.aprendes.length)?c.aprendes:null,
     modules:(c.modulos||[]).sort(byOrden).map(m=>({id:m.id, t:m.titulo,
       lessons:(m.lecciones||[]).sort(byOrden).map(l=>({id:String(l.id), t:l.titulo, d:l.duracion||'', desc:l.descripcion||''}))}))
@@ -599,7 +602,9 @@ const lessonIds = c=>c.modules.flatMap(m=>m.lessons.map(l=>l.id));
 const doneList = id=>{const c=byId(id); return c?lessonIds(c).filter(k=>S.done.has(k)):[]};
 const pct = c=>{const t=totalLessons(c); return t?Math.round(doneList(c.id).length/t*100):0};
 const coverIdx = c=>(((parseInt(c.n)||COURSES.indexOf(c)+1)-1)%4+4)%4;
-const cover = (c,extra='')=>`<div class="cover cv${coverIdx(c)} ${extra}"><span class="tag mono">${esc(c.cat)}</span>${owned(c.id)?'<span class="owned mono">Tuyo</span>':''}<span class="num">${esc(c.n)}</span></div>`;
+const cover = (c,extra='')=>c.img
+  ? `<div class="cover has-img ${extra}"><img src="${esc(c.img)}" alt="" loading="lazy" draggable="false"><span class="tag mono">${esc(c.cat)}</span>${owned(c.id)?'<span class="owned mono">Tuyo</span>':''}</div>`
+  : `<div class="cover cv${coverIdx(c)} ${extra}"><span class="tag mono">${esc(c.cat)}</span>${owned(c.id)?'<span class="owned mono">Tuyo</span>':''}<span class="num">${esc(c.n)}</span></div>`;
 function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,2400)}
 
 /* ---------- Rutas por hash ---------- */
