@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="Cursos de Juan Segura (@creativo.juan): guiones, ganchos, videos y landing pages para negocios hispanos en EE. UU.">
+<meta name="description" content="Cursos de Juan Segura (@creativo.juan): guiones, ganchos, edición de video con IA y landing pages para negocios.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ff6a13'/%3E%3Ctext x='32' y='42' font-family='Arial Black,Arial' font-weight='900' font-size='28' text-anchor='middle' fill='%23160a02'%3EJS%3C/text%3E%3C/svg%3E">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>Cursos Juan Segura</title>
@@ -141,6 +141,8 @@ details.mod li span:last-child{font-family:var(--mono);font-size:12px}
 .video::after{content:"";position:absolute;inset:auto 0 0;height:4px;background:linear-gradient(90deg,var(--accent) var(--p,0%),#222 var(--p,0%))}
 .play{width:68px;height:68px;border-radius:50%;background:var(--accent);display:grid;place-items:center;margin:0 auto 12px}
 .play::before{content:"";border-left:20px solid var(--accent-ink);border-top:12px solid transparent;border-bottom:12px solid transparent;margin-left:5px}
+.intro-prev{margin:28px 0 8px}.intro-prev h2{margin-bottom:12px}.intro-prev .video{width:100%}
+.freetag{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:999px;background:var(--accent);color:#fff;font-size:11px;letter-spacing:.04em;vertical-align:middle}
 .video small{color:rgba(255,255,255,.65);display:block;margin-top:4px}
 .mats{margin-top:18px;display:grid;gap:10px}
 .mats h3{font-size:16px}
@@ -556,7 +558,7 @@ let booted=false, recovery=false;
 
 async function loadCourses(){
   const {data,error}=await sb.from('cursos')
-    .select('id,numero,categoria,titulo,subtitulo,portada,descripcion,precio_usd,nivel,orden,ls_checkout_url,aprendes,incluye,modulos(id,titulo,orden,lecciones(id,titulo,duracion,descripcion,orden))')
+    .select('id,numero,categoria,titulo,subtitulo,portada,descripcion,precio_usd,nivel,orden,ls_checkout_url,aprendes,incluye,modulos(id,titulo,orden,lecciones(id,titulo,duracion,descripcion,orden,gratis))')
     .order('orden');
   if(error){ console.error(error); S.loadError=true; return; }
   const byOrden=(a,b)=>a.orden-b.orden;
@@ -564,7 +566,7 @@ async function loadCourses(){
     id:c.id, n:c.numero||'', cat:c.categoria||'', img:c.portada||'', title:c.titulo, sub:c.subtitulo||c.descripcion||'', about:c.subtitulo?(c.descripcion||''):'', incl:(c.incluye&&c.incluye.length)?c.incluye:null,
     price:Number(c.precio_usd)||0, level:c.nivel||'', checkout:c.ls_checkout_url||'', learn:(c.aprendes&&c.aprendes.length)?c.aprendes:null,
     modules:(c.modulos||[]).sort(byOrden).map(m=>({id:m.id, t:m.titulo,
-      lessons:(m.lecciones||[]).sort(byOrden).map(l=>({id:String(l.id), t:l.titulo, d:l.duracion||'', desc:l.descripcion||''}))}))
+      lessons:(m.lecciones||[]).sort(byOrden).map(l=>({id:String(l.id), t:l.titulo, d:l.duracion||'', desc:l.descripcion||'', free:!!l.gratis}))}))
   }));
 }
 async function loadUserData(){
@@ -596,6 +598,10 @@ const byId = id=>COURSES.find(c=>c.id===id);
 const user = ()=>S.user;
 const owned = id=>!!S.user && S.owned.has(id);
 const totalLessons = c=>c.modules.reduce((a,m)=>a+m.lessons.length,0);
+const isIntroMod = m=>m.lessons.length>0 && m.lessons.every(l=>l.free);
+const mainModules = c=>c.modules.filter(m=>!isIntroMod(m));
+const mainLessons = c=>mainModules(c).reduce((a,m)=>a+m.lessons.length,0);
+const freeLesson = c=>{for(const m of c.modules){const l=m.lessons.find(x=>x.free); if(l) return l;} return null;};
 const totalMin = c=>c.modules.reduce((a,m)=>a+m.lessons.reduce((b,l)=>b+(parseInt(l.d)||0),0),0);
 const fmtPrice = p=>p===0?'Gratis':`$${p}`;
 const lessonIds = c=>c.modules.flatMap(m=>m.lessons.map(l=>l.id));
@@ -645,8 +651,8 @@ function renderCatalog(){
   <section class="wrap hero">
     <div>
       <p class="mono" style="color:var(--accent-text);margin-bottom:14px">Cursos de @creativo.juan</p>
-      <h1>Aprende lo que yo <em>aplico</em> con negocios hispanos en EE. UU.</h1>
-      <p>Lo que hacía como Director Creativo en una agencia de EE. UU., convertido en cursos: guiones de video, ganchos, VSL y landing pages para negocios de servicios.</p>
+      <h1>Aprende lo que yo <em>aplico</em> con negocios reales.</h1>
+      <p>Lo que aprendí trabajando en una agencia de marketing, convertido en cursos: guiones de video, ganchos, edición y landing pages para negocios.</p>
       <div class="hero-cta"><button class="btn lg pulse" id="h-ver">Ver los cursos <span class="arr down">↓</span></button><button class="btn ghost" id="h-free">Empezar con la clase gratis</button></div>
     </div>
     <div class="facts">
@@ -655,7 +661,7 @@ function renderCatalog(){
       <div class="fact"><b>Formato</b><span>Clases en video, por módulos</span></div>
     </div>
   </section>
-  <div class="marquee" aria-hidden="true"><div class="mq">${Array(2).fill(['Ganchos','Guiones','VSL','Landing pages','Edición de video','Posicionamiento','Negocios hispanos en EE. UU.'].map(w=>`<span>${w}</span><i>✦</i>`).join('')).join('')}</div></div>
+  <div class="marquee" aria-hidden="true"><div class="mq">${Array(2).fill(['Ganchos','Guiones','VSL','Landing pages','Edición de video','Posicionamiento','Negocios'].map(w=>`<span>${w}</span><i>✦</i>`).join('')).join('')}</div></div>
   <section class="wrap" id="cursos">
     <div class="sechead">
       <h2>Cursos disponibles</h2>
@@ -668,7 +674,7 @@ function renderCatalog(){
           <div class="cbody">
             <h3>${esc(c.title)}</h3>
             <p>${esc(c.sub)}</p>
-            <div class="meta"><span>${c.modules.length} ${c.modules.length===1?'módulo':'módulos'}</span><span>${totalLessons(c)} clases</span><span>${c.level}</span></div>
+            <div class="meta"><span>${mainModules(c).length} ${mainModules(c).length===1?'módulo':'módulos'}</span><span>${mainLessons(c)} ${mainLessons(c)===1?'clase':'clases'}</span>${freeLesson(c)&&c.price?'<span>Intro gratis</span>':`<span>${c.level}</span>`}</div>
           </div>
           <div class="cfoot">
             <span class="price">${fmtPrice(c.price)}${c.price?'<small>USD</small>':''}</span>
@@ -684,12 +690,13 @@ function renderCatalog(){
     <div style="min-width:0">
       <span class="mono eyebrow">Quién te enseña</span>
       <h2>Soy Juan Segura. Esto lo aprendí haciéndolo para clientes reales.</h2>
-      <p class="intro">Durante un año trabajé en AD Media Solution Central LLC, una agencia de marketing de EE. UU. que atiende negocios hispanos. Escribí los guiones, dirigí al equipo de video y presentaba los resultados a la dirección. Lo que enseño aquí es lo que usé allá.</p>
+      <p class="intro">Soy graduado en Diseño Gráfico y en Producción Multimedia, con estudios en Publicidad y Mercadeo. Tengo experiencia laboral en una agencia de marketing, donde escribí guiones, edité y dirigí videos para negocios. Lo que enseño aquí es lo que usé allá.</p>
       <ol class="timeline">
-        <li><span class="mono">Oct 2025</span><div><b>Editor de video</b><p>Entro a AD Media a editar contenido para negocios hispanos en EE. UU.</p></div></li>
-        <li><span class="mono">Mar 2026</span><div><b>Líder de Diseño</b><p>Paso a liderar las piezas gráficas de las campañas.</p></div></li>
-        <li><span class="mono">2026</span><div><b>Director Creativo</b><p>Lidero el equipo de video y escribo los guiones de las campañas, incluidos los VSL, hasta octubre de 2026.</p></div></li>
-        <li><span class="mono">Hoy</span><div><b>@creativo.juan</b><p>Enseño a dueños de negocio a armar su embudo completo, con mi cara al frente.</p></div></li>
+        <li><span class="mono">Estudios</span><div><b>Diseño Gráfico</b><p>Graduado.</p></div></li>
+        <li><span class="mono">Estudios</span><div><b>Producción Multimedia</b><p>Graduado.</p></div></li>
+        <li><span class="mono">Estudios</span><div><b>Publicidad y Mercadeo</b><p>Estudios en publicidad y mercadeo.</p></div></li>
+        <li><span class="mono">Experiencia</span><div><b>Agencia de marketing</b><p>Edición de video, diseño, guiones y dirección del equipo de video para campañas de negocios.</p></div></li>
+        <li><span class="mono">Hoy</span><div><b>@creativo.juan</b><p>Enseño a llevar un video de la idea a la publicación, con IA.</p></div></li>
       </ol>
       <div class="tools">${['Premiere Pro','After Effects','Photoshop','Illustrator','CapCut','Runway','ElevenLabs','Envato AI'].map(t=>`<span>${t}</span>`).join('')}</div>
     </div>
@@ -699,7 +706,7 @@ function renderCatalog(){
     <span class="mono eyebrow">Por qué valen la pena</span>
     <h2>Cuatro cosas que no vas a encontrar en un tutorial suelto</h2>
     <div class="reasons">
-      <div class="reason"><span class="ic">${ic('<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>')}</span><h3>Sale de cuentas reales</h3><p>Los ejemplos vienen de campañas para negocios de servicios hispanos en EE. UU., no de teoría traducida del inglés.</p></div>
+      <div class="reason"><span class="ic">${ic('<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>')}</span><h3>Sale de cuentas reales</h3><p>Los ejemplos vienen de campañas reales para negocios, no de teoría traducida del inglés.</p></div>
       <div class="reason"><span class="ic">${ic('<path d="M3 4h18l-7 8v6l-4 2v-8z"/>')}</span><h3>Ves el proceso completo</h3><p>Cómo se conecta el video que atrae con el que genera confianza y el que lleva a agendar una llamada.</p></div>
       <div class="reason"><span class="ic">${ic('<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M8 13h8M8 17h5"/>')}</span><h3>Te llevas plantillas</h3><p>Estructuras de guion, bancos de ganchos y checklists para usar el mismo día en tu próximo video.</p></div>
       <div class="reason"><span class="ic">${ic('<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>')}</span><h3>Lo que no te dicen</h3><p>Qué no puedes prometer en un anuncio en EE. UU. y cómo escribir sin chocar con las reglas de la FTC.</p></div>
@@ -707,7 +714,7 @@ function renderCatalog(){
     <div class="compare" role="table" aria-label="Aprender solo frente a aprender con el curso">
       <div class="row head" role="row"><div class="bad" role="columnheader">Por tu cuenta</div><div role="columnheader">Con el curso</div></div>
       <div class="row" role="row"><div class="bad" role="cell">Saltas entre tutoriales sin orden</div><div class="good" role="cell">Sigues una ruta por módulos, de la idea al video publicado</div></div>
-      <div class="row" role="row"><div class="bad" role="cell">Copias ganchos en inglés que no conectan</div><div class="good" role="cell">Usas ganchos escritos para el cliente hispano</div></div>
+      <div class="row" role="row"><div class="bad" role="cell">Copias ganchos en inglés que no conectan</div><div class="good" role="cell">Usas ganchos escritos en español para tu cliente</div></div>
       <div class="row" role="row"><div class="bad" role="cell">Publicas sin saber para qué sirve cada video</div><div class="good" role="cell">Sabes qué video publicar para atraer, para generar confianza y para cerrar</div></div>
       <div class="row" role="row"><div class="bad" role="cell">Prometes resultados y te arriesgas</div><div class="good" role="cell">Escribes ofertas claras sin promesas que no puedes cumplir</div></div>
     </div>
@@ -718,8 +725,8 @@ function renderCatalog(){
     <h2>¿Es para ti?</h2>
     <div class="fit">
       <div class="fitcard yes"><h3>Es para ti si…</h3><ul>
-        <li>Tienes un negocio de servicios hispano en EE. UU. y publicas sin un plan claro.</li>
-        <li>Eres creador, editor o community manager y quieres trabajar con ese mercado.</li>
+        <li>Tienes un negocio y publicas sin un plan claro.</li>
+        <li>Eres creador, editor o community manager y quieres trabajar con negocios.</li>
         <li>Quieres entender por qué un video trae llamadas y otro solo trae likes.</li>
         <li>Prefieres aprender con ejemplos concretos y no con teoría general.</li>
       </ul></div>
@@ -747,22 +754,16 @@ function renderCatalog(){
     <p class="intro">Plantilla: reemplaza cada tarjeta con un testimonio real y con permiso. Lo ideal es que cuente qué tenía antes, qué hizo y qué cambió.</p>
     <div class="quotes">${[1,2,3].map(n=>`<div class="quote"><span class="qm">“</span><p>Aquí va el testimonio ${n}, en palabras de la persona. Dos o tres líneas, con un detalle concreto de su negocio.</p><div class="who"><i></i><div><b>Nombre y apellido</b><span>Negocio · Ciudad, estado</span></div></div></div>`).join('')}</div>
   </div></section>
-
-  <section class="sec"><div class="wrap">
-    <div class="guar">
-      <div class="seal"><div><b>7</b><small>días</small></div></div>
-      <div><h3>Pruébalo sin riesgo</h3><p>Si entras al curso y sientes que no es para ti, escríbeme dentro de los primeros 7 días y te devuelvo tu dinero. Sin formularios largos.</p><span class="edit mono">Ajusta los días a tu política de reembolso</span></div>
-    </div>
-  </div></section>
-
   <section class="sec band"><div class="wrap">
     <span class="mono eyebrow">Preguntas frecuentes</span>
     <h2>Lo que más me preguntan</h2>
     <div class="faq">${[
       ['¿Por cuánto tiempo tengo acceso?','Acceso de por vida al curso que compres, incluidas las actualizaciones de las clases.'],
-      ['¿Puedo pagar si no vivo en EE. UU.?','Sí. Aceptas tarjetas de cualquier país o PayPal, y el precio está en dólares.'],
+      ['¿Puedo pagar desde cualquier país?','Sí. Aceptas tarjetas de cualquier país o PayPal, y el precio está en dólares.'],
+      ['¿Puedo ver algo antes de comprar?','Sí. El video de introducción del curso es gratis para todos, y también puedes tomar la clase gratis.'],
+      ['¿Hacen reembolsos?','No. Todas las ventas son finales, porque el acceso al contenido es inmediato. Por eso puedes ver la introducción gratis y el temario completo antes de pagar.'],
       ['¿Necesito experiencia previa?','No. Cada curso indica su nivel. Si es tu primera vez, empieza por la clase gratis.'],
-      ['¿Sirve si mi negocio no es de marketing?','Sí. Está pensado para dueños de negocios de servicios que quieren entender qué publicar y por qué, no para agencias.'],
+      ['¿Sirve si mi negocio no es de marketing?','Sí. Está pensado para dueños de negocios que quieren entender qué publicar y por qué, no para agencias.'],
       ['¿Cómo entro después de pagar?','Con el correo y la contraseña que creaste. Tus cursos aparecen en Mis cursos.'],
       ['¿Y si me quedo con dudas?','Escríbeme por Instagram a @creativo.juan y te respondo.'],
     ].map(([q,a])=>`<details class="mod"><summary><span>${q}</span><span>+</span></summary><p>${a}</p></details>`).join('')}</div>
@@ -793,13 +794,14 @@ function renderDetail(c){
         <h1>${esc(c.title)}</h1>
         <p class="lead">${esc(c.sub)}</p>
         ${c.about?`<p style="margin-top:12px;max-width:60ch">${esc(c.about)}</p>`:''}
+        ${freeLesson(c)&&c.price?`<div class="intro-prev"><h2>Mira la introducción gratis</h2><div class="video" id="vbox"><div><div class="play" aria-hidden="true"></div><b>${esc(freeLesson(c).t)}</b><small>Cargando video…</small></div></div></div>`:''}
         <div class="learn">${(c.learn||LEARN).map(l=>`<div>${esc(l)}</div>`).join('')}</div>
         <div class="modules">
           <h2>Contenido del curso</h2>
           ${c.modules.map((m,i)=>`
             <details class="mod" ${i===0?'open':''}>
-              <summary><span>${esc(m.t)}</span><span>${m.lessons.length} clases</span></summary>
-              <ul>${m.lessons.map(l=>`<li><span>${esc(l.t)}</span><span>${l.d}</span></li>`).join('')}</ul>
+              <summary><span>${esc(m.t)}</span><span>${m.lessons.length} ${m.lessons.length===1?'clase':'clases'}</span></summary>
+              <ul>${m.lessons.map(l=>`<li><span>${esc(l.t)}${l.free&&c.price?'<span class="freetag mono">Gratis</span>':''}</span><span>${l.d}</span></li>`).join('')}</ul>
             </details>`).join('')}
         </div>
       </div>
@@ -810,8 +812,8 @@ function renderDetail(c){
           <button class="btn lg block" id="buy">${own?'Ir al curso':c.price?'Comprar ahora':'Inscribirme gratis'}</button>
           <ul class="incl">
             ${c.incl?c.incl.map(x=>`<li>${esc(x)}</li>`).join(''):`
-            <li>${totalLessons(c)} clases en video (~${Math.round(totalMin(c)/60*10)/10} h)</li>
-            <li>${c.modules.length} módulos</li>
+            <li>${mainLessons(c)} clases en video</li>
+            <li>${mainModules(c).length} módulos</li>
             <li>Acceso desde celular y computador</li>
             <li>Material descargable (agrega el tuyo)</li>`}
           </ul>
@@ -820,6 +822,16 @@ function renderDetail(c){
     </div>
   </div>`;
   $('#back').onclick=()=>go('cursos');
+  const fl=freeLesson(c);
+  if(fl && c.price && $('#vbox')){
+    sb.from('lecciones_video').select('video_url').eq('leccion_id',Number(fl.id)).maybeSingle().then(({data})=>{
+      const v=$('#vbox'); if(!v) return;
+      if(!data || !data.video_url){ v.querySelector('small').textContent='Muy pronto: el video de introducción.'; return; }
+      const yid=ytId(data.video_url);
+      if(yid) mountYouTube(v, yid, fl.t, ()=>{});
+      else v.querySelector('small').textContent='Muy pronto: el video de introducción.';
+    });
+  }
   $('#buy').onclick=()=>{
     if(own) return go('aprender-'+c.id);
     if(!user()){pendingBuy=c.id;return openLogin('Crea tu cuenta para comprar este curso.')}
@@ -1252,7 +1264,7 @@ function openCheckout(c){
     </div>
     ${free?'':`<p class="note">${LOCK} Pago seguro con <b>Lemon Squeezy</b>. Aceptamos tarjetas de cualquier país y PayPal. Según tu país se pueden sumar impuestos locales, que verás antes de pagar.</p>`}
     <button class="btn lg block" id="pay" ${ready?'':'disabled'}>${free?'Inscribirme gratis':ready?`Pagar ${fmtPrice(c.price)} USD →`:'Muy pronto a la venta'}</button>
-    ${free?'':'<p style="font-size:12px;color:var(--muted);text-align:center;margin:0">Al pagar aceptas los <a href="/terminos.html" target="_blank" style="color:inherit">Términos</a> y la <a href="/reembolsos.html" target="_blank" style="color:inherit">Política de reembolso</a>.</p>'}`);
+    ${free?'':'<p style="font-size:12px;color:var(--muted);text-align:center;margin:0">Venta final, sin reembolsos. Al pagar aceptas los <a href="/terminos.html" target="_blank" style="color:inherit">Términos</a> y la <a href="/reembolsos.html" target="_blank" style="color:inherit">Política de reembolso</a>.</p>'}`);
   if(!ready) return;
   $('#pay').onclick=()=>{
     $('#pay').disabled=true;
