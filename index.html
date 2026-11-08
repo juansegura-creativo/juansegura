@@ -380,11 +380,13 @@ a.btn{text-decoration:none}
 .steps3 b{font-family:var(--display);font-size:21px}
 .steps3 p{color:var(--muted);font-size:14px}
 .quotes{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;margin-top:36px}
-.quote{border:1.5px dashed #d8c8bb;border-radius:var(--r);padding:22px;display:grid;gap:14px;background:var(--surface);align-content:start}
+.quote{margin:0;align-content:stretch;grid-template-rows:auto 1fr auto;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:var(--r);padding:22px;display:grid;gap:14px;background:var(--surface);align-content:start}
 .quote .qm{font-family:var(--display);font-size:52px;line-height:.6;color:var(--accent);height:24px}
 .quote p{color:var(--muted)}
 .quote .who{display:flex;gap:10px;align-items:center;font-size:13px}
-.quote .who i{width:36px;height:36px;border-radius:50%;background:var(--surface-2);flex:none}
+.quote blockquote{margin:0}.quote p{color:var(--fg);opacity:.85}
+.quote .who{margin-top:auto;padding-top:14px;border-top:1px solid var(--line)}
+.quote .who img{width:44px;height:44px;border-radius:50%;object-fit:cover;flex:none;background:var(--surface-2)}
 .quote .who span{color:var(--muted);display:block}
 .guar{display:grid;grid-template-columns:auto minmax(0,1fr);gap:32px;align-items:center;border:1px solid var(--line);border-radius:var(--r);padding:32px;background:var(--surface);box-shadow:var(--shadow)}
 .seal{width:120px;height:120px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-content:center;text-align:center;font-family:var(--display);font-weight:800;line-height:1;outline:2px dashed var(--accent);outline-offset:6px;margin:8px}
@@ -763,8 +765,11 @@ function renderCatalog(){
   <section class="sec band"><div class="wrap">
     <span class="mono eyebrow">Lo que dicen</span>
     <h2>Alumnos y clientes</h2>
-    <p class="intro">Plantilla: reemplaza cada tarjeta con un testimonio real y con permiso. Lo ideal es que cuente qué tenía antes, qué hizo y qué cambió.</p>
-    <div class="quotes">${[1,2,3].map(n=>`<div class="quote"><span class="qm">“</span><p>Aquí va el testimonio ${n}, en palabras de la persona. Dos o tres líneas, con un detalle concreto de su negocio.</p><div class="who"><i></i><div><b>Nombre y apellido</b><span>Negocio · Ciudad, estado</span></div></div></div>`).join('')}</div>
+    <div class="quotes">${[
+      ['/t-camila.jpg','Camila','Estudiante del curso','Antes de la clase de Juan usaba CapCut sin un método. Me enseñó a combinar los 7 pasos para crear un prompt con el curso De la idea al video, en un flujo real de producción. Ahora creo más de 9 videos al día, con todos los tips que él me dio.'],
+      ['/t-danger.jpg','Danger Fernández','CEO de una agencia de marketing en EE. UU.','Juan empezó como editor y en menos de un año pasó a liderar diseño y después a la dirección creativa. Coordinaba al equipo de video, escribía guiones VSL y de MOFU/BOFU y me entregaba reportes claros. Sabe convertir una estrategia de embudo en contenido que se puede ejecutar. Recomiendo totalmente trabajar con él.'],
+      ['/t-jaider.jpg','Jaider Villalobos','Editor de video y streamer','Trabajé con Juan cuando editaba en una agencia de marketing. Entregaba rápido sin que bajara la calidad, entendía el ritmo que necesitaba cada pieza y llegaba con propuestas en vez de esperar instrucciones. Fue mi jefe durante unos meses y sabía perfectamente cómo hacer que un guion funcionara.'],
+    ].map(([img,n,r,t])=>`<figure class="quote"><span class="qm">“</span><blockquote><p>${t}</p></blockquote><figcaption class="who"><img src="${img}" alt="${n}" width="44" height="44" loading="lazy" draggable="false"><div><b>${n}</b><span>${r}</span></div></figcaption></figure>`).join('')}</div>
   </div></section>
   <section class="sec band"><div class="wrap">
     <span class="mono eyebrow">Preguntas frecuentes</span>
