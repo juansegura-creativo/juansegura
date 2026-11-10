@@ -170,7 +170,8 @@ details.mod li span:last-child{font-family:var(--mono);font-size:12px}
 .viewer .vleft{width:min(360px,40vw)}
 .viewer .v916box{aspect-ratio:9/16;max-height:78vh;margin-inline:auto}
 .viewer .vright{display:flex;flex-direction:column;gap:8px;min-width:0}
-.viewer .vright h2{font-size:28px}.viewer .vsteps{color:var(--muted);font-size:14px}
+.viewer .vright h2{font-size:28px}.viewer .vsteps{color:var(--muted);font-size:14px;margin:0;padding-left:18px;display:grid;gap:2px}.viewer .vsteps b{color:var(--fg)}
+.viewer .vdl{margin-top:12px}
 .viewer .libp{margin-top:8px;flex:1;min-height:0}.viewer .libp .ptext{max-height:min(56vh,560px)}
 .viewer .x{position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--surface);z-index:2}
 @media (max-width:760px){.libhero{grid-template-columns:1fr;padding:22px}.viewer{grid-template-columns:1fr;padding:16px;padding-top:52px}.viewer .vleft{width:min(300px,100%);margin-inline:auto}.shelf{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}}
@@ -1238,7 +1239,8 @@ function renderPlayer(id){
 /* ---------- Biblioteca de prompts (recurso) ---------- */
 const LIB_STEPS=`<ol class="howto">
       <li><b>Elige un estilo</b><span>Toca el video que más te guste.</span></li>
-      <li><b>Abre Claude Code</b><span>Agrega tu video a la carpeta de trabajo.</span></li>
+      <li><b>Descarga el video de ejemplo</b><span>Con el botón que está debajo del video.</span></li>
+      <li><b>Abre Claude Code</b><span>Envíale tu video y el video de ejemplo como referencia.</span></li>
       <li><b>Pega el prompt</b><span>Cópialo, pégalo y envíalo. Eso es todo.</span></li>
     </ol>`;
 const libCards=(items,locked)=>`<div class="shelf">${items.map((l,i)=>`
@@ -1269,11 +1271,11 @@ function renderLibrary(c){
 function openPrompt(c,L){
   destroyPlayer();
   $('#modalroot').innerHTML=`<div class="scrim" id="scrim"><div class="viewer" role="dialog" aria-modal="true" aria-label="${esc(L.t)}">
-    <div class="vleft"><div class="video v916box" id="vbox"><div><div class="play" aria-hidden="true"></div><b>${esc(L.t)}</b><small>Cargando video…</small></div></div></div>
+    <div class="vleft"><div class="video v916box" id="vbox"><div><div class="play" aria-hidden="true"></div><b>${esc(L.t)}</b><small>Cargando video…</small></div></div><a class="btn ghost block vdl" id="vdl" hidden>Descargar video de referencia ↓</a></div>
     <div class="vright">
       <span class="mono" style="color:var(--accent-text)">Prompt</span>
       <h2>${esc(L.t)}</h2>
-      <p class="vsteps">Abre Claude Code, agrega tu video y pega este prompt.</p>
+      <ol class="vsteps"><li>Descarga este video de ejemplo.</li><li>En Claude Code, envía <b>tu video</b> y <b>este video de ejemplo como referencia</b>.</li><li>Pega el prompt y envíalo.</li></ol>
       <div class="pbox libp"><div class="phead"><h3>Prompt completo</h3><button class="btn sm" id="pcopy" disabled>Copiar prompt</button></div><pre class="ptext" id="ptext">Cargando prompt…</pre></div>
     </div>
     <button class="x" id="x" aria-label="Cerrar">✕</button>
@@ -1285,6 +1287,13 @@ function openPrompt(c,L){
     if(!data || !data.prompt){ pre.textContent='Este prompt estará disponible muy pronto.'; return; }
     pre.textContent=data.prompt; btn.disabled=false;
     btn.onclick=async()=>{ try{ await navigator.clipboard.writeText(data.prompt); }catch(e){ const r=document.createRange(); r.selectNodeContents(pre); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r); document.execCommand('copy'); sel.removeAllRanges(); } btn.textContent='✓ Copiado'; toast('Prompt copiado. Pégalo en Claude Code.'); setTimeout(()=>{ if($('#pcopy')) $('#pcopy').textContent='Copiar prompt'; },2000); };
+  });
+  sb.from('lecciones_material').select('titulo,archivo').eq('leccion_id',Number(L.id)).order('orden').limit(1).then(async({data})=>{
+    const a=$('#vdl'); if(!a || !data || !data.length) return;
+    const m=data[0], name='referencia-'+L.t.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w]+/g,'-').toLowerCase()+'.'+(m.archivo.split('.').pop()||'mp4');
+    const r=await sb.storage.from('materiales').createSignedUrl(m.archivo,3600,{download:name});
+    if(r.error || !r.data){ console.warn('Video de referencia no disponible', m.archivo); return; }
+    a.href=r.data.signedUrl; a.setAttribute('download',name); a.hidden=false;
   });
   sb.from('lecciones_video').select('video_url').eq('leccion_id',Number(L.id)).maybeSingle().then(({data})=>{
     const v=$('#vbox'); if(!v) return;
