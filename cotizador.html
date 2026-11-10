@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
+<title>Cotizador Creativo Juan</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: dos columnas — controles a la izquierda, hoja de cotización tipo recibo a la derecha (se apila en celular) */
+:root{
+  --bg:#f6f4f1; --surface:#ffffff; --ink:#141210; --muted:#6d6660; --line:#e4dfd9;
+  --orange:#ff5a1f; --orange-soft:#fff0e8; --on-orange:#ffffff; --ok:#1f8a4c;
+  --display:"Space Grotesk",system-ui,sans-serif; --body:"Inter",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121110; --surface:#1c1a18; --ink:#f4f1ee; --muted:#a39b94; --line:#2f2b28;
+  --orange:#ff6a33; --orange-soft:#2e1d14; --on-orange:#140b06; --ok:#4cc27e; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121110; --surface:#1c1a18; --ink:#f4f1ee; --muted:#a39b94; --line:#2f2b28;
+  --orange:#ff6a33; --orange-soft:#2e1d14; --on-orange:#140b06; --ok:#4cc27e; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:1100px;margin:0 auto;padding-block:32px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{margin-bottom:28px;display:flex;flex-direction:column;gap:4px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--orange)}
+h1{font-family:var(--display);font-size:clamp(28px,5vw,42px);line-height:1.05;margin:0;text-wrap:balance}
+.sub{color:var(--muted);margin:0;max-width:56ch}
+.grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:24px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{display:flex;flex-direction:column;gap:16px}
+.block{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px}
+.block h2{font-family:var(--display);font-size:18px;margin:0;display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.block h2 small{font-family:var(--mono);font-size:12px;font-weight:400;color:var(--muted)}
+label.f{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}
+input[type=text],textarea#msg{resize:vertical;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
+input:focus-visible,button:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:520px){.modes{grid-template-columns:1fr}}
+.mode-btn{font:inherit;text-align:left;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px 16px;cursor:pointer;display:flex;flex-direction:column;gap:4px}
+.mode-btn b{font-family:var(--display);font-size:17px}
+.mode-btn span{font-size:13px;color:var(--muted)}
+.mode-btn:hover{border-color:var(--orange)}
+.mode-btn.on{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.mode-btn.on span{color:var(--bg);opacity:.75}
+.seg.seg3{grid-template-columns:repeat(3,1fr)}
+@media (max-width:520px){.seg.seg3{grid-template-columns:1fr}}
+.stepn{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--orange);color:var(--on-orange);font:700 13px var(--display);margin-right:10px;vertical-align:2px}
+#planBox,#customBox{gap:16px}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px}
+.seg button{font:600 14px var(--display);border:0;border-radius:9px;padding:10px 8px;background:transparent;color:var(--muted);cursor:pointer}
+.seg button.on{background:var(--ink);color:var(--bg)}
+.plans{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:520px){.plans{grid-template-columns:minmax(0,1fr)}}
+.plan{font:inherit;color:var(--ink);text-align:left;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px;cursor:pointer;display:flex;flex-direction:column;gap:6px;position:relative}
+.plan:hover{border-color:var(--orange)}
+.plan.on{border-color:var(--orange);background:var(--orange-soft);box-shadow:0 0 0 1px var(--orange) inset}
+.plan .pn{font-family:var(--display);font-weight:700;font-size:16px}
+.plan .pp{font-family:var(--display);font-size:26px;font-weight:700;color:var(--orange);line-height:1;font-variant-numeric:tabular-nums}
+.plan .pp small{font:400 12px var(--mono);color:var(--muted)}
+.plan ul{margin:0;padding-left:16px;font-size:12.5px;color:var(--muted)}
+.plan .ps{font:600 11.5px var(--mono);color:var(--ok)}
+.plan .tag{position:absolute;top:10px;right:10px;font:600 10px var(--mono);letter-spacing:.06em;text-transform:uppercase;background:var(--orange);color:var(--on-orange);padding:3px 7px;border-radius:999px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.row .info{min-width:0;flex:1 1 180px}
+.row .info strong{display:block;font-family:var(--display);font-size:16px}
+.row .info span{font-size:13px;color:var(--muted)}
+.stepper{display:flex;align-items:center;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--bg)}
+.stepper button{font:600 20px var(--display);width:44px;height:44px;border:0;background:transparent;color:var(--ink);cursor:pointer}
+.stepper button:hover{background:var(--orange-soft);color:var(--orange)}
+.stepper input{width:56px;height:44px;border:0;border-inline:1px solid var(--line);background:var(--surface);color:var(--ink);text-align:center;font:600 18px var(--mono);font-variant-numeric:tabular-nums;-moz-appearance:textfield}
+.stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.tiers{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.tier{border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center;font-size:12px;color:var(--muted)}
+.tier b{display:block;font-family:var(--mono);font-size:13px;color:var(--ink)}
+.tier.on{border-color:var(--orange);background:var(--orange-soft);color:var(--ink)}
+.tier.on b{color:var(--orange)}
+.nudge{font-size:13px;color:var(--orange);font-weight:500;min-height:1.2em;margin:0}
+.toggle{display:flex;gap:12px;align-items:flex-start;cursor:pointer;padding:12px;border:1px solid var(--line);border-radius:12px}
+.toggle:hover{border-color:var(--orange)}
+.toggle input{accent-color:var(--orange);width:18px;height:18px;margin-top:2px;flex:none}
+.toggle div{min-width:0}
+.toggle strong{display:block;font-size:14px}
+.toggle span{font-size:13px;color:var(--muted)}
+.opts{display:grid;gap:8px}
+.radio{display:flex;gap:12px;align-items:flex-start;padding:12px;border:1px solid var(--line);border-radius:12px;cursor:pointer}
+.radio:has(input:checked){border-color:var(--orange);background:var(--orange-soft)}
+.radio input{accent-color:var(--orange);margin-top:3px;flex:none}
+.radio div{min-width:0;flex:1}
+.radio strong{display:flex;justify-content:space-between;gap:8px;font-size:14px}
+.radio strong em{font-style:normal;font-family:var(--mono);color:var(--orange);white-space:nowrap}
+.radio ul{margin:4px 0 0;padding-left:16px;font-size:13px;color:var(--muted)}
+.radio span{font-size:13px;color:var(--muted)}
+.note{font-size:12px;color:var(--muted);margin:0}
+
+.sheet{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+@media (max-width:860px){.sheet{position:static}}
+.sheet-head{background:var(--ink);color:var(--bg);padding:18px 20px;display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.sheet-head .t{font-family:var(--display);font-size:20px;font-weight:700}
+.sheet-head .meta{font-family:var(--mono);font-size:11px;opacity:.75;text-align:right;line-height:1.6}
+.sheet-body{padding:18px 20px;display:flex;flex-direction:column;gap:14px}
+.client{font-size:13px;color:var(--muted)}
+.client b{color:var(--ink)}
+.mode{font:600 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--orange);margin-top:-8px}
+.lines{display:flex;flex-direction:column;font-variant-numeric:tabular-nums}
+.line{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px dashed var(--line);font-size:14px}
+.line .d{min-width:0}
+.line .d small{display:block;font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+.line .v{font-family:var(--mono);font-weight:600;white-space:nowrap}
+.line.inc .v{color:var(--ok)}
+.empty{color:var(--muted);font-size:14px;padding:12px 0}
+.save{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--ok);font-family:var(--mono)}
+.total{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding-top:6px}
+.total span{font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.total b{font-family:var(--display);font-size:38px;line-height:1;color:var(--orange);font-variant-numeric:tabular-nums}
+.total b small{font-size:14px;color:var(--muted);font-family:var(--mono);font-weight:400}
+.per{font-size:13px;color:var(--muted);text-align:right;margin-top:-6px}
+.includes{background:var(--bg);border-radius:10px;padding:12px 14px;font-size:13px;display:flex;flex-direction:column;gap:4px}
+.includes b{font-family:var(--display);font-size:13px}
+.includes ul{margin:0;padding-left:18px;color:var(--muted)}
+.actions{display:flex;flex-direction:column;gap:8px}
+.btn{font:600 15px var(--display);border:0;border-radius:12px;padding:14px;background:var(--orange);color:var(--on-orange);cursor:pointer}
+.btn:hover{filter:brightness(1.06)}
+.btn.alt{background:var(--ink);color:var(--bg)}
+.btn:disabled{opacity:.6;cursor:wait}
+.status{font-size:12.5px;color:var(--muted);text-align:center;margin:0;min-height:1em}
+.contact{font-size:13px;color:var(--muted);text-align:center}
+.contact b{color:var(--ink);font-family:var(--mono);user-select:all}
+textarea.fallback{width:100%;min-height:140px;font:12px var(--mono);background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Creativo Juan · Uso interno</span>
+    <h1>Nueva cotización</h1>
+    <p class="sub">Arma el plan del cliente y descarga la propuesta en PDF. Cada reel lleva su portada y cada horizontal su miniatura, sin costo extra.</p>
+  </header>
+
+  <div class="grid">
+    <div class="panel">
+      <section class="block">
+        <label class="f" for="client">Nombre del negocio o cliente
+          <input type="text" id="client" placeholder="Ej: Barbería El Patrón" value="">
+        </label>
+        <label class="f" for="msg">Mensaje personal para el cliente (opcional, sale en el PDF)
+          <textarea id="msg" rows="3" placeholder="Ej: Carlos, vi tus últimos videos y tu barbería tiene mucho para mostrar. Este plan está pensado para que publiques todos los días sin tener que editar tú."></textarea>
+        </label>
+      </section>
+
+      <section class="block">
+        <div class="eyebrow">¿Cómo quieres contratar?</div>
+        <div class="modes">
+          <button type="button" class="mode-btn on" id="mPlan"><b>Plan mensual</b><span>Paquetes ya armados a precio fijo. Es la opción más barata.</span></button>
+          <button type="button" class="mode-btn" id="mCustom"><b>A tu medida</b><span>Tú decides cuántos videos, si quieres guiones y qué marketing.</span></button>
+        </div>
+      </section>
+
+      <div id="planBox" class="panel">
+        <section class="block">
+          <h2><span><span class="stepn">1</span>¿Qué videos necesitas?</span></h2>
+          <div class="seg seg3" role="tablist" aria-label="Tipo de videos">
+            <button type="button" id="segR" class="on" role="tab">Solo reels</button>
+            <button type="button" id="segV" role="tab">Solo horizontales</button>
+            <button type="button" id="segH" role="tab">Reels + horizontales</button>
+          </div>
+        </section>
+        <section class="block">
+          <h2><span><span class="stepn">2</span>¿Quieres que escriba los guiones?</span></h2>
+          <div class="seg" role="tablist" aria-label="Guiones">
+            <button type="button" id="scrY" class="on" role="tab">Con guiones</button>
+            <button type="button" id="scrN" role="tab">Sin guiones, yo los traigo</button>
+          </div>
+        </section>
+        <section class="block">
+          <h2><span><span class="stepn">3</span>Escoge tu plan</span> <small>el marketing ya viene incluido</small></h2>
+          <div class="plans" id="plans"></div>
+        </section>
+      </div>
+
+      <div id="customBox" class="panel" hidden>
+        <section class="block">
+          <h2><span><span class="stepn">1</span>¿Cuántos videos al mes?</span> <small>deja en 0 lo que no necesites</small></h2>
+          <div class="row">
+            <div class="info"><strong>Reels verticales</strong><span>9:16 · hasta 1 min · incluye portada</span></div>
+            <div class="stepper"><button type="button" data-step="reels" data-d="-1" aria-label="Quitar reel">−</button><input id="reels" type="number" min="0" max="200" value="15" inputmode="numeric" aria-label="Cantidad de reels"><button type="button" data-step="reels" data-d="1" aria-label="Agregar reel">+</button></div>
+          </div>
+          <div class="row">
+            <div class="info"><strong>Videos horizontales</strong><span>16:9 · YouTube o más de 2 min · incluye miniatura</span></div>
+            <div class="stepper"><button type="button" data-step="horiz" data-d="-1" aria-label="Quitar horizontal">−</button><input id="horiz" type="number" min="0" max="100" value="0" inputmode="numeric" aria-label="Cantidad de videos horizontales"><button type="button" data-step="horiz" data-d="1" aria-label="Agregar horizontal">+</button></div>
+          </div>
+          <div class="tiers" id="tiers"></div>
+          <p class="nudge" id="nudge"></p>
+        </section>
+        <section class="block">
+          <h2><span><span class="stepn">2</span>¿Quieres que escriba los guiones?</span> <small>Reel $10 · Horizontal $25</small></h2>
+          <div class="seg" role="tablist" aria-label="Guiones a la medida">
+            <button type="button" id="cScrY" class="on" role="tab">Con guiones</button>
+            <button type="button" id="cScrN" role="tab">Sin guiones, yo los traigo</button>
+          </div>
+          <input type="checkbox" id="scripts" checked hidden>
+        </section>
+        <section class="block">
+          <h2><span><span class="stepn">3</span>¿Necesitas marketing?</span> <small>tarifa mensual</small></h2>
+          <div class="opts" id="mkt"></div>
+          <p class="note">La inversión en anuncios la pagas tú directo a la plataforma; no está incluida en este valor.</p>
+        </section>
+      </div>
+    </div>
+
+    <aside class="sheet" aria-live="polite">
+      <div class="sheet-head">
+        <div class="t">Cotización</div>
+        <div class="meta"><span id="qnum"></span><br><span id="qdate"></span><br>Válida 15 días</div>
+      </div>
+      <div class="sheet-body">
+        <div class="client">Para: <b id="clientOut">—</b></div>
+        <div class="mode" id="mode"></div>
+        <div class="lines" id="lines"></div>
+        <div class="save" id="save"></div>
+        <div class="total"><span>Total mensual</span><b id="total">$0 <small>USD</small></b></div>
+        <div class="per" id="per"></div>
+        <div class="save" id="value"></div>
+        <div class="includes">
+          <b>Incluido en todos los planes</b>
+          <ul>
+            <li>Reunión semanal de 30 min (4 al mes)</li>
+            <li>Portada para cada reel y miniatura para cada horizontal</li>
+            <li>Subtítulos animados y música con licencia</li>
+            <li>2 rondas de cambios por video</li>
+            <li>Entrega en 3 a 5 días hábiles</li>
+          </ul>
+        </div>
+        <div class="actions">
+          <button class="btn" id="pdf" type="button">Descargar propuesta en PDF</button>
+          <button class="btn alt" id="copy" type="button">Copiar cotización para WhatsApp</button>
+          <p class="status" id="status"></p>
+          <textarea class="fallback" id="fallback" hidden readonly aria-label="Texto de la cotización"></textarea>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+const PRICE = { reel: 20, horiz: 40, scriptReel: 10, scriptHoriz: 25 };
+const MKT = [
+  {name:"Sin marketing", p:0, items:["Solo producción de videos"]},
+  {name:"Marketing Estrategia", short:"Estrategia", p:90, items:["Análisis de ganchos ganadores de tu nicho (10 al mes)","Calendario de contenido mensual","Reporte de resultados del mes"]},
+  {name:"Marketing Crecimiento", short:"Crecimiento", p:220, items:["Todo lo de Estrategia","Pauta en Meta (Instagram + Facebook), inversión hasta $1,000/mes","1 campaña activa"]},
+  {name:"Marketing Pro", short:"Pro", p:380, items:["Todo lo de Crecimiento","Pauta en Meta + TikTok o Google, inversión hasta $3,000/mes","Hasta 3 campañas, pruebas A/B y revisión de tu página de ventas"]}
+];
+const TIERS = [ {min:1,max:4,off:0,label:"1–4"}, {min:5,max:14,off:.10,label:"5–14"}, {min:15,max:29,off:.20,label:"15–29"}, {min:30,max:Infinity,off:.30,label:"30+"} ];
+const PLANS = {
+  R: [
+    {name:"Arranque", price:119, cfg:{reels:5,horiz:0,scripts:1,mkt:0}, items:["5 reels","Guiones incluidos"]},
+    {name:"Crecimiento", price:399, tag:"Más pedido", cfg:{reels:15,horiz:0,scripts:1,mkt:1}, items:["15 reels","Guiones incluidos","Marketing Estrategia"]},
+    {name:"Dominio", price:790, cfg:{reels:30,horiz:0,scripts:1,mkt:2}, items:["30 reels","Guiones incluidos","Marketing Crecimiento (con pauta)"]},
+    {name:"Ilimitado", price:1390, unlimited:true, cfg:{reels:44,horiz:0,scripts:1,mkt:3}, items:["Reels ilimitados (1 en producción a la vez)","Guiones incluidos","Marketing Pro"]}
+  ],
+  H: [
+    {name:"Arranque", price:169, cfg:{reels:5,horiz:1,scripts:1,mkt:0}, items:["5 reels + 1 horizontal","Guiones incluidos"]},
+    {name:"Crecimiento", price:549, tag:"Más pedido", cfg:{reels:15,horiz:3,scripts:1,mkt:1}, items:["15 reels + 3 horizontales","Guiones incluidos","Marketing Estrategia"]},
+    {name:"Dominio", price:990, cfg:{reels:30,horiz:6,scripts:1,mkt:2}, items:["30 reels + 6 horizontales","Guiones incluidos","Marketing Crecimiento (con pauta)"]},
+    {name:"Ilimitado", price:1790, unlimited:true, cfg:{reels:44,horiz:8,scripts:1,mkt:3}, items:["Reels ilimitados + 8 horizontales","Guiones incluidos","Marketing Pro"]}
+  ],
+  V: [
+    {name:"Arranque", price:109, cfg:{reels:0,horiz:2,scripts:1,mkt:0}, items:["2 videos horizontales","Guiones incluidos"]},
+    {name:"Crecimiento", price:289, tag:"Más pedido", cfg:{reels:0,horiz:4,scripts:1,mkt:1}, items:["4 videos horizontales","Guiones incluidos","Marketing Estrategia"]},
+    {name:"Dominio", price:569, cfg:{reels:0,horiz:8,scripts:1,mkt:2}, items:["8 videos horizontales","Guiones incluidos","Marketing Crecimiento (con pauta)"]},
+    {name:"Máximo", price:890, cfg:{reels:0,horiz:12,scripts:1,mkt:3}, items:["12 videos horizontales","Guiones incluidos","Marketing Pro"]}
+  ]
+};
+let line = "R", plan = 1, lastPlan = 1, scr = true;
+const LN = {R:"Solo reels", V:"Solo horizontales", H:"Reels + horizontales"};
+// Plan sin guiones: se descuenta el valor de los guiones con el 20% de descuento del plan
+function planAt(i){
+  const P = PLANS[line][i]; if (scr) return P;
+  const c = P.cfg, sv = (c.reels*PRICE.scriptReel + c.horiz*PRICE.scriptHoriz)*0.8;
+  return {...P, price: Math.round((P.price - sv)/10)*10 - 1, cfg:{...c, scripts:0}, items: P.items.map(x => x==="Guiones incluidos" ? "Sin guiones (tú los traes)" : x)};
+}
+
+const $ = id => document.getElementById(id);
+const money = n => "$" + n.toLocaleString("en-US",{minimumFractionDigits: n%1?2:0, maximumFractionDigits:2});
+const tierFor = n => TIERS.find(t => n>=t.min && n<=t.max) || TIERS[0];
+const clamp = (v,max) => Math.max(0, Math.min(max, parseInt(v,10)||0));
+
+const now = new Date();
+$("qdate").textContent = now.toLocaleDateString("es-CO",{day:"numeric",month:"short",year:"numeric"});
+$("qnum").textContent = "N.º CJ-" + now.toISOString().slice(2,10).replace(/-/g,"") + "-" + String(Math.floor(now.getTime()/1000)%1000).padStart(3,"0");
+
+$("mkt").innerHTML = MKT.map((m,i)=>`<label class="radio"><input type="radio" name="mkt" value="${i}"${i===0?" checked":""}><div><strong>${m.name} <em>${m.p?money(m.p)+"/mes":"$0"}</em></strong><ul>${m.items.map(x=>`<li>${x}</li>`).join("")}</ul></div></label>`).join("");
+
+function customPrice(c){
+  const off = tierFor(c.reels+c.horiz).off;
+  return (c.reels*PRICE.reel + c.horiz*PRICE.horiz)*(1-off) + (c.scripts ? c.reels*PRICE.scriptReel + c.horiz*PRICE.scriptHoriz : 0) + MKT[c.mkt].p;
+}
+function drawPlans(){
+  ["R","V","H"].forEach(k => $("seg"+k).classList.toggle("on", line===k));
+  $("cScrY").classList.toggle("on", $("scripts").checked); $("cScrN").classList.toggle("on", !$("scripts").checked);
+  $("planBox").hidden = plan===null; $("customBox").hidden = plan!==null;
+  $("mPlan").classList.toggle("on", plan!==null); $("mCustom").classList.toggle("on", plan===null);
+  $("scrY").classList.toggle("on", scr); $("scrN").classList.toggle("on", !scr);
+  $("plans").innerHTML = PLANS[line].map((_,i)=>planAt(i)).map((P,i)=>`<button type="button" class="plan${i===plan?" on":""}" data-i="${i}">${P.tag?`<span class="tag">${P.tag}</span>`:""}<span class="pn">${P.name}</span><span class="pp">${money(P.price)} <small>USD/mes</small></span><ul>${P.items.map(x=>`<li>${x}</li>`).join("")}</ul><span class="ps">${P.unlimited?"Sin límite de reels":(v=>`Valor real ${money(v.total)} · ahorras ${v.pct}%`)(valueStack({r:P.cfg.reels,h:P.cfg.horiz,scripts:P.cfg.scripts,mkt:P.cfg.mkt},{L:[],total:P.price}))}</span></button>`).join("");
+}
+function applyCfg(c){
+  $("reels").value = c.reels; $("horiz").value = c.horiz; $("scripts").checked = !!c.scripts;
+  document.querySelector(`input[name=mkt][value="${c.mkt}"]`).checked = true;
+}
+
+function calc(){
+  const r = clamp($("reels").value,200), h = clamp($("horiz").value,100);
+  const n = r + h, tier = tierFor(n);
+  const ur = PRICE.reel*(1-tier.off), uh = PRICE.horiz*(1-tier.off);
+  const m = MKT[+document.querySelector('input[name=mkt]:checked').value];
+  const meet = {d:"Reunión semanal (4 al mes)", s:"30 min cada una", v:0, inc:true};
+  if (plan !== null){
+    const P = planAt(plan);
+    const L = [{d:`Plan ${P.name} · ${LN[line]}`, s:P.items.join(" · "), v:P.price}];
+    if (P.cfg.mkt >= 2) L.push({d:"Inversión en anuncios", s:"Se paga aparte, directo a la plataforma", v:0, inc:true, txt:"Aparte"});
+    L.push(meet);
+    return {n: P.unlimited?0:n, tier, L, total:P.price, saved: P.unlimited?0:customPrice(P.cfg)-P.price, m, plan:P};
+  }
+  const L = []; let edit = 0;
+  if (r) { L.push({d:`${r} reel${r>1?"s":""} con portada`, s:`${r} × ${money(ur)}${tier.off?` (antes ${money(PRICE.reel)})`:""}`, v:r*ur}); edit += r*ur; }
+  if (h) { L.push({d:`${h} video${h>1?"s":""} horizontal${h>1?"es":""} con miniatura`, s:`${h} × ${money(uh)}${tier.off?` (antes ${money(PRICE.horiz)})`:""}`, v:h*uh}); edit += h*uh; }
+  if (false && edit) L.push({d:"Entrega exprés 48 h", s:"+20% sobre la edición", v:edit*.2});
+  if ($("scripts").checked && n) L.push({d:`Guiones (${n})`, s:[r?`${r} × $10`:"",h?`${h} × $25`:""].filter(Boolean).join(" + "), v:r*PRICE.scriptReel + h*PRICE.scriptHoriz});
+  if (m.p) L.push({d:m.name, s: m.p>=220 ? "Mensual · inversión en anuncios aparte" : "Mensual", v:m.p});
+  L.push(meet);
+  return {n, tier, L, total: L.reduce((a,b)=>a+b.v,0), saved: (r*PRICE.reel + h*PRICE.horiz) - edit, m};
+}
+
+function render(){
+  const q = calc();
+  drawPlans();
+  $("clientOut").textContent = $("client").value.trim() || "—";
+  $("mode").textContent = plan!==null ? "Plan mensual · precio fijo" : "A tu medida";
+  $("tiers").innerHTML = TIERS.map(t => `<div class="tier${t===q.tier&&q.n?" on":""}"><b>${t.off?"-"+t.off*100+"%":"Base"}</b>${t.label} videos</div>`).join("");
+  const next = TIERS[TIERS.indexOf(q.tier)+1];
+  $("nudge").textContent = plan===null && q.n && next ? `Agrega ${next.min-q.n} video${next.min-q.n>1?"s":""} más y el reel baja a ${money(PRICE.reel*(1-next.off))}.` : "";
+  $("lines").innerHTML = q.L.length>1 ? q.L.map(l => `<div class="line${l.inc?" inc":""}"><div class="d">${l.d}<small>${l.s}</small></div><div class="v">${l.inc?(l.txt||"Incluida"):money(l.v)}</div></div>`).join("") : `<div class="empty">Escoge un plan o agrega videos para ver la cotización.</div>`;
+  $("save").innerHTML = q.saved>0 ? `<span>${q.plan?"Ahorro vs. armarlo por separado":"Ahorro por volumen"}</span><span>−${money(q.saved)}</span>` : "";
+  $("total").innerHTML = `${money(q.total)} <small>USD</small>`;
+  $("per").textContent = q.plan && q.plan.unlimited ? "Reels sin límite mensual, uno en producción a la vez" : q.n ? `Equivale a ${money(Math.round(q.total/q.n*100)/100)} por video, todo incluido` : "";
+  const V = valueStack(state(), q);
+  $("value").innerHTML = V.save>0 ? `<span>Valor real <s>${money(V.total)}</s></span><span>Ahorras ${money(V.save)} (${V.pct}%)</span>` : "";
+  if (V.save>0) $("save").innerHTML = "";
+  $("fallback").hidden = true;
+}
+
+function quoteText(){
+  const q = calc(), c = $("client").value.trim();
+  let t = `*Cotización Creativo Juan* ${$("qnum").textContent}\n`;
+  if (c) t += `Para: ${c}\n`;
+  t += `\n` + q.L.map(l => `• ${l.d}: ${l.inc?(l.txt||"incluida"):money(l.v)}${l.inc?"":` (${l.s})`}`).join("\n");
+  if (q.saved>0) t += `\n${q.plan?"Ahorro vs. armarlo por separado":"Ahorro por volumen"}: −${money(q.saved)}`;
+  t += `\n\n*Total mensual: ${money(q.total)} USD*`;
+  if (q.n) t += `\n(${money(Math.round(q.total/q.n*100)/100)} por video)`;
+  t += `\n\nIncluye: reunión semanal de 30 min, portada en cada reel, miniatura en cada horizontal, subtítulos animados, música con licencia y 2 rondas de cambios por video.`;
+  if ((q.plan ? q.plan.cfg.mkt : MKT.indexOf(q.m)) >= 2) t += `\nLa inversión en anuncios se paga aparte, directo a la plataforma.`;
+  t += `\nVálida por 15 días.`;
+  return t;
+}
+
+function setLine(l){ line = l; if (plan!==null) applyCfg(planAt(plan).cfg); render(); }
+$("segR").addEventListener("click", ()=>setLine("R"));
+$("segH").addEventListener("click", ()=>setLine("H"));
+$("segV").addEventListener("click", ()=>setLine("V"));
+$("mPlan").addEventListener("click", ()=>{ plan = lastPlan; applyCfg(planAt(plan).cfg); render(); });
+$("mCustom").addEventListener("click", ()=>{ if (plan!==null) lastPlan = plan; plan = null; render(); });
+$("cScrY").addEventListener("click", ()=>{ $("scripts").checked = true; render(); });
+$("cScrN").addEventListener("click", ()=>{ $("scripts").checked = false; render(); });
+function setScr(v){ scr = v; if (plan!==null) applyCfg(planAt(plan).cfg); render(); }
+$("scrY").addEventListener("click", ()=>setScr(true));
+$("scrN").addEventListener("click", ()=>setScr(false));
+document.addEventListener("click", e => {
+  const s = e.target.closest("[data-step]");
+  if (s){ const inp = $(s.dataset.step); inp.value = clamp(+inp.value + +s.dataset.d, +inp.max); plan = null; render(); }
+  const p = e.target.closest(".plan");
+  if (p){ plan = lastPlan = +p.dataset.i; applyCfg(planAt(plan).cfg); render(); }
+});
+document.addEventListener("input", e => { if (e.target.matches("input") && e.target.id!=="client") plan = null; render(); });
+["reels","horiz"].forEach(id => $(id).addEventListener("change", e => { e.target.value = clamp(e.target.value, +e.target.max); render(); }));
+
+$("copy").addEventListener("click", () => {
+  const text = quoteText(), btn = $("copy");
+  const done = () => { btn.textContent = "Copiada ✓"; setTimeout(()=>btn.textContent="Copiar cotización para WhatsApp",1800); };
+  const fallback = () => { const f = $("fallback"); f.value = text; f.hidden = false; f.focus(); f.select(); btn.textContent = "Selecciona y copia el texto"; };
+  try { navigator.clipboard.writeText(text).then(done, fallback); } catch(_) { fallback(); }
+});
+applyCfg(planAt(plan).cfg);
+render();
+
+/* ---------- PDF ---------- */
+function state(){
+  const P = plan!==null ? planAt(plan) : null;
+  return { r:clamp($("reels").value,200), h:clamp($("horiz").value,100), scripts:$("scripts").checked,
+    mkt:+document.querySelector('input[name=mkt]:checked').value, rush:false, P, unlimited:!!(P&&P.unlimited) };
+}
+
+function valueStack(st,q){
+  const r=st.r, h=st.h, rows=[];
+  if(r) rows.push([`Edición de reels`, `${r}${st.unlimited?" (referencia)":""} × $20`, r*20]);
+  if(r) rows.push([`Portadas de reel`, `${r} × $5`, r*5]);
+  if(h) rows.push([`Videos horizontales`, `${h} × $40`, h*40]);
+  if(h) rows.push([`Miniaturas para YouTube`, `${h} × $10`, h*10]);
+  if(st.scripts&&(r+h)) rows.push([`Guiones`, [r?`${r} × $10`:"",h?`${h} × $25`:""].filter(Boolean).join(" + "), r*10+h*25]);
+  if(st.mkt>0) rows.push([MKT[st.mkt].name, "mensual", MKT[st.mkt].p]);
+  rows.push([`Reuniones semanales de estrategia`, `4 × $30`, 120]);
+  const rush=(q.L.find(l=>l.d.startsWith("Entrega exprés"))||{}).v||0;
+  if(rush) rows.push([`Entrega exprés 48 h`, `20% de la edición`, rush]);
+  const total=rows.reduce((a,b)=>a+b[2],0);
+  return {rows,total,save:Math.max(0,total-q.total),pct:total?Math.round((1-q.total/total)*100):0};
+}
+
+function buildPDF(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:"pt", format:"letter"});
+  const W=612, H=792, M=44, CW=W-2*M;
+  const C={o:[255,90,31],ink:[20,18,16],mu:[109,102,96],ln:[228,223,217],soft:[255,240,232],ok:[31,138,76],okbg:[232,245,237],bg:[246,244,241],w:[255,255,255],dim:[150,143,137],ink2:[38,35,32]};
+  const fill=c=>doc.setFillColor(...c), stroke=c=>doc.setDrawColor(...c), color=c=>doc.setTextColor(...c);
+  const font=(s,w="normal")=>{doc.setFont("helvetica",w);doc.setFontSize(s);};
+  const q=calc(), st=state(), client=$("client").value.trim(), msg=$("msg").value.trim();
+  const V=valueStack(st,q);
+  const num=$("qnum").textContent.replace("N.º ","");
+  const fmt=d=>d.toLocaleDateString("es-CO",{day:"numeric",month:"long",year:"numeric"});
+  const until=new Date(now.getTime()+15*864e5);
+  const planName=st.P?`Plan ${st.P.name}`:"Plan a tu medida";
+  const planSub=st.P?(LN[line]):"Armado para tu negocio";
+  const n=st.r+st.h;
+  let y;
+
+  function mini(){ fill(C.ink); doc.rect(0,0,W,34,"F"); fill(C.o); doc.rect(0,34,W,3,"F");
+    color(C.o); font(8,"bold"); doc.text("CREATIVO JUAN",M,21,{charSpace:1.5});
+    color(C.dim); font(8); doc.text(`Propuesta ${num}${client?" · "+client:""}`,W-M,21,{align:"right"}); }
+  function ensure(h){ if(y+h>H-62){ doc.addPage(); mini(); y=72; } }
+  function sec(eyebrow,title,next=60){ ensure(40+next); color(C.o); font(8,"bold"); doc.text(eyebrow.toUpperCase(),M,y,{charSpace:1.5});
+    color(C.ink); font(18,"bold"); doc.text(title,M,y+22); y+=42; }
+  function strike(txt,x,yy,align){ const w=doc.getTextWidth(txt); const x0=align==="right"?x-w:x; doc.setLineWidth(1.2); doc.line(x0,yy-4,x0+w,yy-4); }
+
+  // Entregables
+  const tiles=[];
+  if(st.r||st.unlimited){ tiles.push([st.unlimited?"Sin límite":String(st.r),"Reels editados","9:16, listos para publicar"]); tiles.push([st.unlimited?"Sin límite":String(st.r),"Portadas de reel","con tu identidad visual"]); }
+  if(st.h){ tiles.push([String(st.h),"Videos horizontales","16:9 para YouTube"]); tiles.push([String(st.h),"Miniaturas","una por cada video"]); }
+  if(st.scripts&&n) tiles.push([st.unlimited?"Sin límite":String(n),"Guiones","gancho, desarrollo y cierre"]);
+  tiles.push(["4","Reuniones","30 min cada semana"]);
+  if(st.mkt>=1){ tiles.push(["10","Ganchos analizados","los que funcionan en tu nicho"]); tiles.push(["1","Calendario","de contenido del mes"]); tiles.push(["1","Reporte","de resultados del mes"]); }
+  if(st.mkt>=2) tiles.push([st.mkt===3?"3":"1","Campañas de pauta",st.mkt===3?"Meta + TikTok o Google":"en Instagram y Facebook"]);
+  const totalDeliv = st.unlimited ? null : tiles.reduce((a,t)=>a+(+t[0]||0),0);
+
+  /* ===== PORTADA ===== */
+  fill(C.ink); doc.rect(0,0,W,H,"F");
+  fill(C.o); doc.rect(0,0,8,H,"F");
+  color(C.o); font(9,"bold"); doc.text("CREATIVO JUAN",M+10,56,{charSpace:2.5});
+  color(C.dim); font(8,"bold"); doc.text(`PROPUESTA N.º ${num}`,W-M,56,{align:"right",charSpace:1});
+  color(C.dim); font(13); doc.text("Propuesta de contenido y marketing para",M+10,200);
+  color(C.w); font(44,"bold"); const cl=doc.splitTextToSize(client||"Tu negocio",CW-20).slice(0,2); doc.text(cl,M+10,250,{lineHeightFactor:1.05});
+  let cy=250+(cl.length-1)*46+40;
+  color(C.o); font(16,"bold"); doc.text(`${planName}  ·  ${planSub}`,M+10,cy);
+  // número gigante
+  cy=Math.max(cy+120, 470);
+  if(totalDeliv){ color(C.o); font(120,"bold"); doc.text(String(totalDeliv),M+4,cy);
+    const nw=doc.getTextWidth(String(totalDeliv)); color(C.w); font(22,"bold"); doc.text("entregables",M+18+nw,cy-48); doc.text("cada mes",M+18+nw,cy-20); }
+  else { color(C.o); font(76,"bold"); doc.text("Sin límite",M+6,cy); color(C.w); font(18,"bold"); doc.text("de reels cada mes",M+10,cy+30); }
+  // franja de valor
+  const sy=cy+60, sw=(CW-20)/3;
+  stroke(C.ink2); doc.setLineWidth(1); doc.line(M+10,sy-18,W-M,sy-18);
+  [["VALOR REAL",money(V.total),"dim"],["TU INVERSIÓN",money(q.total)+"/mes","w"],["TE AHORRAS",V.pct+"%","o"]].forEach(([k,v,c],i)=>{
+    const x=M+10+i*(sw+5); color(C.dim); font(7.5,"bold"); doc.text(k,x,sy,{charSpace:1.2});
+    color(c==="o"?C.o:c==="w"?C.w:C.dim); font(24,"bold"); doc.text(v,x,sy+30);
+    if(c==="dim"){ stroke(C.o); strike(v,x,sy+30); } });
+  color(C.dim); font(9); doc.text("Preparada por",M+10,H-88); color(C.w); font(12,"bold"); doc.text("Juan Segura",M+10,H-72);
+  color(C.dim); font(9); doc.text("@creativo.juan  ·  WhatsApp +57 320 2075663",M+10,H-58);
+  color(C.dim); font(9); doc.text(`Emitida el ${fmt(now)}`,W-M,H-72,{align:"right"}); doc.text(`Válida hasta el ${fmt(until)}`,W-M,H-58,{align:"right"});
+
+  /* ===== PÁGINA 2 ===== */
+  doc.addPage(); mini(); y=78;
+  if(msg){ font(10.5); const ml=doc.splitTextToSize(msg,CW-48); const mh=ml.length*15+52; fill(C.soft); doc.roundedRect(M,y,CW,mh,8,8,"F");
+    color(C.o); font(40,"bold"); doc.text("“",M+16,y+40);
+    color(C.ink); font(10.5); doc.text(ml,M+40,y+26,{lineHeightFactor:1.4});
+    color(C.mu); font(9,"bold"); doc.text("Juan Segura",M+40,y+mh-14); y+=mh+30; }
+
+  sec("Entregables","Todo lo que te llevas cada mes",100);
+  const tw=(CW-20)/3, th=80;
+  tiles.forEach((t,i)=>{ const col=i%3; if(col===0){ ensure(th+10); }
+    const x=M+col*(tw+10); fill(C.bg); doc.roundedRect(x,y,tw,th,6,6,"F");
+    const big=t[0]; color(C.o); font(big.length>3?18:30,"bold"); doc.text(big,x+14,y+36);
+    color(C.ink); font(10.5,"bold"); doc.text(t[1],x+14,y+56);
+    color(C.mu); font(8.5); doc.text(doc.splitTextToSize(t[2],tw-28)[0],x+14,y+69);
+    if(col===2||i===tiles.length-1) y+=th+10; });
+  y+=26;
+
+  // Valor
+  sec("Valor","Lo que pagarías por separado",140);
+  const vx1=M+14, vx2=M+300, vx3=W-M-14;
+  V.rows.forEach((r,i)=>{ ensure(26); if(i%2===0){ fill(C.bg); doc.rect(M,y,CW,24,"F"); }
+    color(C.ink); font(10,"bold"); doc.text(r[0],vx1,y+16); color(C.mu); font(9); doc.text(r[1],vx2,y+16);
+    color(C.ink); font(10,"bold"); doc.text(money(r[2]),vx3,y+16,{align:"right"}); y+=24; });
+  ensure(30); stroke(C.ln); doc.setLineWidth(.8); doc.line(M,y,W-M,y); y+=4;
+  color(C.mu); font(10,"bold"); doc.text("Valor total por separado",vx1,y+18);
+  font(13,"bold"); doc.text(money(V.total),vx3,y+18,{align:"right"}); stroke(C.o); strike(money(V.total),vx3,y+18,"right"); y+=34;
+  ensure(96); fill(C.ink); doc.roundedRect(M,y,CW,88,8,8,"F");
+  color(C.dim); font(8,"bold"); doc.text("TU INVERSIÓN MENSUAL",M+22,y+28,{charSpace:1.5});
+  color(C.w); font(34,"bold"); doc.text(money(q.total),M+22,y+66); const iw=doc.getTextWidth(money(q.total)); color(C.dim); font(11); doc.text("USD / mes",M+30+iw,y+66);
+  if(V.save>0){ fill(C.o); doc.roundedRect(W-M-170,y+20,148,48,6,6,"F"); color(C.w); font(8,"bold"); doc.text("TE AHORRAS",W-M-156,y+38,{charSpace:1.2});
+    font(17,"bold"); doc.text(`${money(V.save)}  (${V.pct}%)`,W-M-156,y+58); }
+  y+=88;
+  if(st.mkt>=2){ y+=16; color(C.mu); font(8); doc.text("La inversión en anuncios no está incluida: se paga directo a la plataforma (Meta, TikTok o Google).",M,y); }
+  if(q.n){ y+=16; color(C.mu); font(8); doc.text(`Equivale a ${money(Math.round(q.total/q.n*100)/100)} por video con todo incluido.`,M,y); }
+  y+=34;
+
+  // Mes
+  sec("Calendario","Así se ve tu mes",150);
+  const wk=[0,1,2,3].map(i=>({r:Math.floor(st.r/4)+(i<st.r%4?1:0), h:Math.floor(st.h/4)+(i<st.h%4?1:0)}));
+  const ww=(CW-24)/4;
+  const wl=wk.map((w,i)=>{ const L=[]; if(i===0) L.push("Reunión de arranque"); else L.push("Reunión semanal");
+    if(st.scripts) L.push("Guiones aprobados");
+    if(st.unlimited) L.push("Reels sin límite"); else if(w.r) L.push(`${w.r} reel${w.r>1?"s":""} entregado${w.r>1?"s":""}`);
+    if(w.h) L.push(`${w.h} horizontal${w.h>1?"es":""}`);
+    if(st.mkt>=2) L.push(i===0?"Montaje de campaña":"Pauta optimizada");
+    if(st.mkt>=1 && i===0) L.push("Calendario del mes");
+    if(st.mkt>=1 && i===3) L.push("Reporte de resultados");
+    return L; });
+  const wh=Math.max(...wl.map(l=>l.length))*15+50; ensure(wh);
+  wl.forEach((L,i)=>{ const x=M+i*(ww+8); fill(i===0?C.o:C.bg); doc.roundedRect(x,y,ww,wh,6,6,"F");
+    color(i===0?C.w:C.o); font(8,"bold"); doc.text(`SEMANA ${i+1}`,x+12,y+22,{charSpace:1.2});
+    font(9); L.forEach((s,j)=>{ color(i===0?C.w:C.ink); doc.text(doc.splitTextToSize(s,ww-24)[0],x+12,y+42+j*15); }); });
+  y+=wh+34;
+
+  /* ===== DETALLE ===== */
+  const blocks=[];
+  if(st.r||st.unlimited) blocks.push({t:`Reels verticales (${st.unlimited?"sin límite":st.r})`, b:["Formato 9:16 de hasta 60 segundos para Instagram, TikTok y Shorts","Cortes con ritmo, subtítulos animados, música con licencia y efectos de sonido","Corrección de color y portada diseñada con tu identidad", ...(st.unlimited?["Un reel en producción a la vez: al entregarlo empieza el siguiente"]:[])]});
+  if(st.h) blocks.push({t:`Videos horizontales (${st.h})`, b:["Formato 16:9 para YouTube o videos de más de 2 minutos","Edición completa con motion graphics, subtítulos y música","Miniatura diseñada para cada video"]});
+  if(st.scripts) blocks.push({t:"Guiones", b:["Gancho para los primeros 3 segundos, desarrollo y llamado a la acción","Escritos para tu negocio, tu cliente y tu forma de hablar","Los apruebas antes de grabar"]});
+  if(st.mkt>0) blocks.push({t:MKT[st.mkt].name, b:MKT[st.mkt].items});
+  blocks.push({t:"Reunión semanal", b:["4 reuniones de 30 minutos al mes por videollamada","Revisamos qué funcionó en la semana y qué ajustar","Dejamos listos los temas de la semana siguiente"]});
+  if(st.rush) blocks.push({t:"Entrega exprés", b:["Tus videos pasan al frente de la cola de edición","Entrega en 48 horas desde que llega el material"]});
+  blocks.push({t:"En todos los videos", b:["2 rondas de cambios por video","Entrega en 3 a 5 días hábiles","Archivos listos para publicar en cada red"]});
+  const colW=(CW-14)/2;
+  const measure=bk=>{ font(11,"bold"); let h=doc.splitTextToSize(bk.t,colW-28).length*14+12; font(9); bk.b.forEach(x=>h+=doc.splitTextToSize(x,colW-42).length*12+5); return h+18; };
+  const drawBlock=(bk,x,yy,h)=>{ fill(C.bg); doc.roundedRect(x,yy,colW,h,6,6,"F");
+    let t=yy+22; color(C.ink); font(11,"bold"); const tl=doc.splitTextToSize(bk.t,colW-28); doc.text(tl,x+14,t); t+=tl.length*14+4;
+    font(9); bk.b.forEach(s=>{ const sl=doc.splitTextToSize(s,colW-42); fill(C.o); doc.circle(x+18,t-3,1.8,"F"); color(C.mu); doc.text(sl,x+26,t,{lineHeightFactor:1.3}); t+=sl.length*12+5; }); };
+  sec("Alcance","Qué incluye cada servicio", Math.max(measure(blocks[0]), blocks[1]?measure(blocks[1]):0)+12);
+  for(let i=0;i<blocks.length;i+=2){ const a=blocks[i], b=blocks[i+1]; const h=Math.max(measure(a), b?measure(b):0);
+    ensure(h+12); drawBlock(a,M,y,h); if(b) drawBlock(b,M+colW+14,y,h); y+=h+12; }
+  y+=26;
+
+  const steps=[["Reunión de arranque","Conocemos tu negocio, tu cliente ideal y tus objetivos del mes."]];
+  if(st.scripts) steps.push(["Guiones","Te envío los guiones de la semana para que los apruebes antes de grabar."]);
+  steps.push(["Grabación",st.scripts?"Grabas con tu celular siguiendo el guion y me envías el material.":"Grabas con tu celular y me envías el material."]);
+  steps.push(["Edición y entrega",st.rush?"Edito y entrego en 48 horas, listos para publicar.":"Edito y entrego en 3 a 5 días hábiles, listos para publicar."]);
+  if(st.mkt>=2) steps.push(["Pauta","Montamos las campañas con los videos que mejor funcionen."]);
+  steps.push(["Revisión semanal","Cada semana miramos resultados y ajustamos el plan."]);
+  font(9); const stH=steps.reduce((a,[t,d])=>a+Math.max(30,doc.splitTextToSize(d,CW-50).length*12+20),0);
+  sec("Proceso","Cómo trabajamos",stH);
+  steps.forEach(([t,d],i)=>{ font(9); const dl=doc.splitTextToSize(d,CW-50); const h=Math.max(30,dl.length*12+20); ensure(h);
+    fill(C.o); doc.circle(M+12,y+8,12,"F"); color(C.w); font(10,"bold"); doc.text(String(i+1),M+12,y+12,{align:"center"});
+    if(i<steps.length-1){ stroke(C.ln); doc.setLineWidth(1); doc.line(M+12,y+22,M+12,y+h); }
+    color(C.ink); font(11,"bold"); doc.text(t,M+36,y+6); color(C.mu); font(9); doc.text(dl,M+36,y+20,{lineHeightFactor:1.3}); y+=h; });
+  y+=26;
+
+  sec("Condiciones","Antes de empezar");
+  ["Valores en dólares estadounidenses (USD), con facturación mensual.",
+   "El pago del mes se hace por adelantado para iniciar la producción.",
+   "El tiempo de entrega corre desde que llega todo el material grabado.",
+   "Cambios adicionales a las 2 rondas, o a un guion ya aprobado, se cotizan aparte.",
+   "Los videos que no se usen en el mes no se acumulan para el siguiente.",
+   ...(st.mkt>=2?["La inversión en anuncios se paga directo a la plataforma y no está incluida."]:[]),
+   "El valor por separado usa las tarifas individuales de cada servicio, sin descuentos.",
+   "No se garantizan cifras de ventas ni seguidores: trabajamos con datos y los revisamos cada semana.",
+   `Esta propuesta es válida hasta el ${fmt(until)}.`
+  ].forEach(s=>{ font(9); const sl=doc.splitTextToSize(s,CW-16); ensure(sl.length*12+6); fill(C.o); doc.rect(M,y-5,4,4,"F"); color(C.mu); doc.text(sl,M+14,y,{lineHeightFactor:1.3}); y+=sl.length*12+6; });
+  y+=22;
+
+  ensure(110); fill(C.ink); doc.roundedRect(M,y,CW,100,8,8,"F");
+  color(C.w); font(20,"bold"); doc.text("¿Arrancamos esta semana?",M+24,y+38);
+  color(C.dim); font(10); doc.text("Escríbeme por WhatsApp y agendamos la reunión de arranque.",M+24,y+58);
+  color(C.o); font(15,"bold"); doc.text("+57 320 2075663",M+24,y+82);
+  color(C.w); font(11,"bold"); doc.text("Juan Segura",W-M-24,y+58,{align:"right"});
+  color(C.dim); font(9); doc.text("@creativo.juan",W-M-24,y+74,{align:"right"});
+
+  const pages=doc.getNumberOfPages();
+  for(let i=2;i<=pages;i++){ doc.setPage(i); stroke(C.ln); doc.setLineWidth(.6); doc.line(M,H-40,W-M,H-40);
+    color(C.mu); font(7.5); doc.text("Creativo Juan  ·  @creativo.juan  ·  WhatsApp +57 320 2075663",M,H-26);
+    doc.text(`Página ${i} de ${pages}`,W-M,H-26,{align:"right"}); }
+  return doc.output("blob");
+}
+
+let downloads=null;
+(async()=>{ try{ downloads = await window.claude?.use?.("downloads") || null; }catch(_){ downloads=null; } })();
+// En tu propia página web se descarga directo; dentro de Claude usa la descarga del visor
+function directSave(blob,filename){ const u=URL.createObjectURL(blob), a=document.createElement("a"); a.href=u; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),4000); }
+$("pdf").addEventListener("click", async ()=>{
+  const btn=$("pdf"), status=$("status");
+  if(!window.jspdf){ status.textContent="No se pudo cargar el generador de PDF. Recarga la página."; return; }
+  btn.disabled=true; btn.textContent="Generando PDF…"; status.textContent="";
+  try{
+    const blob=buildPDF();
+    const slug=($("client").value.trim()||"cliente").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^A-Za-z0-9]+/g,"-").replace(/^-|-$/g,"")||"cliente";
+    const filename=`Propuesta-CreativoJuan-${slug}.pdf`;
+    if(downloads) await downloads.save({filename, data:blob}); else directSave(blob,filename);
+    status.textContent="PDF descargado.";
+  }catch(e){
+    const c=e&&e.code;
+    status.textContent = c==="declined" ? "" : c==="rate_limited" ? "Ya hay una descarga pendiente. Intenta en unos segundos." : "No se pudo generar el PDF. Intenta de nuevo.";
+    if(c==="unavailable"||c==="not_granted"){ downloads=null; status.textContent="Intenta de nuevo para descargar directo."; }
+  }finally{ btn.disabled=false; btn.textContent="Descargar propuesta en PDF"; }
+});
+</script>
+
+</body>
+</html>
