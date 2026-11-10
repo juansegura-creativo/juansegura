@@ -612,6 +612,7 @@ a.btn{text-decoration:none}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <script src="https://app.lemonsqueezy.com/js/lemon.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@polar-sh/checkout@0.4.3/dist/embed.global.js" defer></script>
 <script>
 /* ---------- Conexión a Supabase ---------- */
 const SUPABASE_URL='https://izjfqfputahsmvfvgkos.supabase.co';
@@ -730,7 +731,7 @@ function renderCatalog(){
     </div>
     <div class="facts">
       <div class="fact"><b>Acceso</b><span>Inmediato después del pago</span></div>
-      <div class="fact"><b>Pago</b><span>Tarjetas internacionales y PayPal, en USD</span></div>
+      <div class="fact"><b>Pago</b><span>Tarjetas de cualquier país, en USD</span></div>
       <div class="fact"><b>Formato</b><span>Clases en video, por módulos</span></div>
     </div>
   </section>
@@ -811,7 +812,7 @@ function renderCatalog(){
     <div class="how">
       <div class="howc"><span class="hn mono">01</span><span class="ic">${ic('<circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l5.5-3.5z"/>')}</span><b>Mira la intro gratis</b><p>Revisa el temario y la introducción del curso antes de pagar.</p></div>
       <div class="howc"><span class="hn mono">02</span><span class="ic">${ic('<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/>')}</span><b>Crea tu cuenta</b><p>Solo tu nombre, tu correo y una contraseña.</p></div>
-      <div class="howc"><span class="hn mono">03</span><span class="ic">${ic('<rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19M6.5 15h4"/>')}</span><b>Paga desde cualquier país</b><p>Tarjeta o PayPal, en dólares. Pago único.</p></div>
+      <div class="howc"><span class="hn mono">03</span><span class="ic">${ic('<rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19M6.5 15h4"/>')}</span><b>Paga desde cualquier país</b><p>Tarjeta de crédito o débito, en dólares. Pago único.</p></div>
       <div class="howc"><span class="hn mono">04</span><span class="ic">${ic('<path d="M5 12l5 5 9-10"/>')}</span><b>Empieza de una</b><p>El acceso se activa al instante, en celular o computador. Tu progreso queda guardado.</p></div>
     </div>
   </div></section>
@@ -830,7 +831,7 @@ function renderCatalog(){
     <h2>Lo que más me preguntan</h2>
     <div class="faq">${[
       ['¿Por cuánto tiempo tengo acceso?','Acceso de por vida al curso que compres, incluidas las actualizaciones de las clases.'],
-      ['¿Puedo pagar desde cualquier país?','Sí. Aceptas tarjetas de cualquier país o PayPal, y el precio está en dólares.'],
+      ['¿Puedo pagar desde cualquier país?','Sí. Puedes pagar con tarjeta de crédito o débito de cualquier país, y el precio está en dólares.'],
       ['¿Puedo ver algo antes de comprar?','Sí. El video de introducción del curso es gratis para todos, y también puedes tomar la clase gratis.'],
       ['¿Hacen reembolsos?','No. Todas las ventas son finales, porque el acceso al contenido es inmediato. Por eso puedes ver la introducción gratis y el temario completo antes de pagar.'],
       ['¿Necesito experiencia previa?','No. Cada curso indica su nivel. Si es tu primera vez, empieza por la clase gratis.'],
@@ -1419,7 +1420,7 @@ function openCheckout(c){
       <div><span>Precio</span><span>${fmtPrice(c.price)}${c.price?' USD':''}</span></div>
       <div class="tot"><span>Total</span><span>${fmtPrice(c.price)}${c.price?' USD':''}</span></div>
     </div>
-    ${free?'':`<p class="note">${LOCK} Pago seguro con <b>${payName(c)}</b>. Aceptamos tarjetas de cualquier país y PayPal. Según tu país se pueden sumar impuestos locales, que verás antes de pagar.</p>`}
+    ${free?'':`<p class="note">${LOCK} Pago seguro con <b>${payName(c)}</b>. ${isPolar(c)?'Aceptamos tarjetas de crédito y débito de cualquier país.':'Aceptamos tarjetas de cualquier país y PayPal.'} Según tu país se pueden sumar impuestos locales, que verás antes de pagar.</p>`}
     <button class="btn lg block" id="pay" ${ready?'':'disabled'}>${free?'Inscribirme gratis':ready?`Pagar ${fmtPrice(c.price)} USD →`:'Muy pronto a la venta'}</button>
     ${free?'':'<p style="font-size:12px;color:var(--muted);text-align:center;margin:0">Venta final, sin reembolsos. Al pagar aceptas los <a href="/terminos.html" target="_blank" style="color:inherit">Términos</a> y la <a href="/reembolsos.html" target="_blank" style="color:inherit">Política de reembolso</a>.</p>'}`);
   if(!ready) return;
@@ -1432,7 +1433,7 @@ function openCheckout(c){
 
 const LOCK='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="vertical-align:-2px"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
 
-/* ---------- Pago (Gumroad o Lemon Squeezy, según el link de pago del curso) ---------- */
+/* ---------- Pago (Polar, Gumroad o Lemon Squeezy, según el link de pago del curso) ---------- */
 const isPolar=c=>/polar\.sh/i.test(c.checkout||'');
 const isGumroad=c=>/gumroad\.com/i.test(c.checkout||'');
 const isExternal=c=>isPolar(c)||isGumroad(c);
@@ -1455,12 +1456,24 @@ function checkoutUrl(c, embed){
 }
 let lemonSetup=false;
 function startPayment(c){
-  if(isExternal(c)){
+  if(isPolar(c) && window.Polar && window.Polar.EmbedCheckout){
+    window.Polar.EmbedCheckout.create(gumroadUrl(c),{theme:'light'}).then(ck=>{
+      ck.addEventListener('success',ev=>{ try{ ev.preventDefault(); }catch(_){} setTimeout(()=>{ try{ ck.close(); }catch(_){} waitForAccess(c); },1200); });
+    }).catch(err=>{ console.error(err); openExternal(c); });
+    return;
+  }
+  if(isExternal(c)) return openExternal(c);
+  return lemonPay(c);
+}
+function openExternal(c){
+  {
     const w=window.open(gumroadUrl(c),'_blank');
     if(!w){ location.href=gumroadUrl(c); return; }
     try{ w.opener=null; }catch(_){}
     waitForAccess(c); return;
   }
+}
+function lemonPay(c){
   const ls=window.LemonSqueezy;
   if(window.createLemonSqueezy && (ls || window.createLemonSqueezy)){
     try{
