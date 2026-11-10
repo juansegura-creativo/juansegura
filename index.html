@@ -194,6 +194,7 @@ details.mod li span:last-child{font-family:var(--mono);font-size:12px}
 .incbox p{font-size:14px;color:var(--fg)}
 .incbox .linkbtn{justify-self:start;color:var(--accent-text);font-weight:600}
 .mats h3{font-size:16px}
+.pbox .ptext.pcmd{font-size:16px;font-weight:600;color:var(--accent-text)}
 .mat{display:flex;align-items:center;gap:14px;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--surface)}
 .mat .ico{width:42px;height:48px;border-radius:8px;background:var(--accent-soft);color:var(--accent-text);display:grid;place-items:center;font-family:var(--mono);font-size:11px;font-weight:700;flex:none}
 .mat .nm{flex:1;min-width:0;font-weight:600;font-size:14px;overflow-wrap:anywhere}
@@ -625,7 +626,7 @@ let booted=false, recovery=false;
 
 async function loadCourses(){
   const {data,error}=await sb.from('cursos')
-    .select('id,numero,categoria,titulo,subtitulo,portada,descripcion,precio_usd,nivel,orden,ls_checkout_url,aprendes,incluye,tipo,gratis_con,modulos(id,titulo,orden,lecciones(id,titulo,duracion,descripcion,orden,gratis,miniatura))')
+    .select('id,numero,categoria,titulo,subtitulo,portada,descripcion,precio_usd,nivel,orden,ls_checkout_url,aprendes,incluye,tipo,gratis_con,modulos(id,titulo,orden,lecciones(id,titulo,duracion,descripcion,orden,gratis,miniatura,botones))')
     .order('orden');
   if(error){ console.error(error); S.loadError=true; return; }
   const byOrden=(a,b)=>a.orden-b.orden;
@@ -633,7 +634,7 @@ async function loadCourses(){
     id:c.id, n:c.numero||'', cat:c.categoria||'', img:c.portada||'', title:c.titulo, sub:c.subtitulo||c.descripcion||'', about:c.subtitulo?(c.descripcion||''):'', incl:(c.incluye&&c.incluye.length)?c.incluye:null,
     price:Number(c.precio_usd)||0, level:c.nivel||'', lib:c.tipo==='biblioteca', inc:c.gratis_con||'', checkout:c.ls_checkout_url||'', learn:(c.aprendes&&c.aprendes.length)?c.aprendes:null,
     modules:(c.modulos||[]).sort(byOrden).map(m=>({id:m.id, t:m.titulo,
-      lessons:(m.lecciones||[]).sort(byOrden).map(l=>({id:String(l.id), t:l.titulo, d:l.duracion||'', desc:l.descripcion||'', free:!!l.gratis, img:l.miniatura||''}))}))
+      lessons:(m.lecciones||[]).sort(byOrden).map(l=>({id:String(l.id), t:l.titulo, d:l.duracion||'', desc:l.descripcion||'', free:!!l.gratis, img:l.miniatura||'', btns:Array.isArray(l.botones)?l.botones:[]}))}))
   }));
 }
 async function loadUserData(){
@@ -1173,6 +1174,10 @@ function renderPlayer(id){
         ${L.desc?`<div class="notes">${esc(L.desc)}</div>`:''}
         <div class="pbox" id="pbox" hidden></div>
         <div class="mats" id="mats" hidden></div>
+        ${L.btns&&L.btns.length?`<div class="mats acts"><h3>Para ti</h3>${L.btns.map((b,i)=>`
+          <div class="mat"><span class="ico">${b.tipo==='whatsapp'?'WA':'LIB'}</span>
+            <span class="nm">${esc(b.texto)}${b.detalle?`<small>${esc(b.detalle)}</small>`:''}</span>
+            ${b.tipo==='whatsapp'?`<a class="btn" href="${esc(WHATSAPP?`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(b.mensaje||WA_TEXT)}`:waLink())}" target="_blank" rel="noopener">${esc(b.texto)} →</a>`:`<button class="btn" data-act="${i}">${esc(b.texto)} →</button>`}</div>`).join('')}</div>`:''}
       </div>
       <aside class="toc">
         <div class="top"><b>${esc(c.title)}</b><div class="prog"><i style="width:${pct(c)}%"></i></div><span class="mono" style="color:var(--muted)">${pct(c)}% · ${done.length}/${flat.length} ${unit(c,2)}</span></div>
@@ -1182,6 +1187,7 @@ function renderPlayer(id){
     </div>
   </div>`;
   $('#back').onclick=()=>go('mis-cursos');
+  document.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>{ const lib=COURSES.find(x=>x.lib); if(lib){ destroyPlayer&&destroyPlayer(); go('aprender-'+lib.id); window.scrollTo(0,0);} });
   document.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{currentLesson[id]=b.dataset.k;renderPlayer(id)});
   const refresh=()=>{
     const d=S.done.has(cur), n=doneList(id).length;
@@ -1218,11 +1224,12 @@ function renderPlayer(id){
         ${m.url?`<a class="btn" href="${esc(m.url)}" download>Descargar ↓</a>`:''}</div>`).join('');
     box.hidden=false;
   });
-  sb.from('lecciones_prompt').select('prompt').eq('leccion_id',Number(cur)).maybeSingle().then(({data})=>{
+  sb.from('lecciones_prompt').select('prompt,titulo,boton').eq('leccion_id',Number(cur)).maybeSingle().then(({data})=>{
     const box=$('#pbox'); if(!box || currentLesson[id]!==cur || !data || !data.prompt) return;
-    box.innerHTML=`<div class="phead"><h3>Prompt</h3><button class="btn sm" id="pcopy">Copiar prompt</button></div><pre class="ptext">${esc(data.prompt)}</pre>`;
+    const lbl=data.boton||'Copiar prompt', short=!data.prompt.includes('\n')&&data.prompt.length<80;
+    box.innerHTML=`<div class="phead"><h3>${esc(data.titulo||'Prompt')}</h3><button class="btn sm" id="pcopy">${esc(lbl)}</button></div><pre class="ptext${short?' pcmd':''}">${esc(data.prompt)}</pre>`;
     box.hidden=false;
-    $('#pcopy').onclick=async()=>{ try{ await navigator.clipboard.writeText(data.prompt); }catch(e){ const r=document.createRange(); r.selectNodeContents(box.querySelector('pre')); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r); document.execCommand('copy'); sel.removeAllRanges(); } $('#pcopy').textContent='✓ Copiado'; toast('Prompt copiado'); setTimeout(()=>{const b=$('#pcopy'); if(b) b.textContent='Copiar prompt'},2000); };
+    $('#pcopy').onclick=async()=>{ try{ await navigator.clipboard.writeText(data.prompt); }catch(e){ const r=document.createRange(); r.selectNodeContents(box.querySelector('pre')); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r); document.execCommand('copy'); sel.removeAllRanges(); } $('#pcopy').textContent='✓ Copiado'; toast(short?'Copiado. Pégalo en Claude Code.':'Copiado'); setTimeout(()=>{const b=$('#pcopy'); if(b) b.textContent=lbl},2000); };
   });
   sb.from('lecciones_video').select('video_url').eq('leccion_id',Number(cur)).maybeSingle().then(({data})=>{
     const v=$('#vbox');
