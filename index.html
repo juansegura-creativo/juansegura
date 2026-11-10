@@ -1291,7 +1291,8 @@ function openPrompt(c,L){
   sb.from('lecciones_material').select('titulo,archivo').eq('leccion_id',Number(L.id)).order('orden').limit(1).then(async({data})=>{
     const a=$('#vdl'); if(!a || !data || !data.length) return;
     const m=data[0], name='referencia-'+L.t.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w]+/g,'-').toLowerCase()+'.'+(m.archivo.split('.').pop()||'mp4');
-    const r=await sb.storage.from('materiales').createSignedUrl(m.archivo,3600,{download:name});
+    const [bucket,path]=m.archivo.includes(':')?m.archivo.split(/:(.*)/s):['materiales',m.archivo];
+    const r=await sb.storage.from(bucket).createSignedUrl(path,3600,{download:name});
     if(r.error || !r.data){ console.warn('Video de referencia no disponible', m.archivo); return; }
     a.href=r.data.signedUrl; a.setAttribute('download',name); a.hidden=false;
   });
