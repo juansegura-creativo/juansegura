@@ -822,7 +822,7 @@ function renderCatalog(){
     <h2>Alumnos y clientes</h2>
     <div class="quotes">${[
       ['/t-camila.jpg','Camila','Estudiante del curso','Antes de la clase de Juan usaba CapCut sin un método. Me enseñó a combinar los 7 pasos para crear un prompt con el curso De la idea al video, en un flujo real de producción. Ahora creo más de 9 videos al día, con todos los tips que él me dio.'],
-      ['/t-danger.jpg','Danger Fernández','CEO de una agencia de marketing en EE. UU.','Juan empezó como editor y en menos de un año pasó a liderar diseño y después a la dirección creativa. Coordinaba al equipo de video, escribía guiones VSL y de MOFU/BOFU y me entregaba reportes claros. Sabe convertir una estrategia de embudo en contenido que se puede ejecutar. Recomiendo totalmente trabajar con él.'],
+      ['/t-danger.jpg','Danger Fernández','CEO de AD Media Solution, agencia de marketing en EE. UU.','Juan empezó como editor y en menos de un año pasó a liderar diseño y después a la dirección creativa. Coordinaba al equipo de video, escribía guiones VSL y de MOFU/BOFU y me entregaba reportes claros. Sabe convertir una estrategia de embudo en contenido que se puede ejecutar. Recomiendo totalmente trabajar con él.'],
       ['/t-jaider.jpg','Jaider Villalobos','Editor de video y streamer','Trabajé con Juan cuando editaba en una agencia de marketing. Entregaba rápido sin que bajara la calidad, entendía el ritmo que necesitaba cada pieza y llegaba con propuestas en vez de esperar instrucciones. Fue mi jefe durante unos meses y sabía perfectamente cómo hacer que un guion funcionara.'],
     ].map(([img,n,r,t])=>`<figure class="quote"><span class="qm">“</span><blockquote><p>${t}</p></blockquote><figcaption class="who"><img src="${img}" alt="${n}" width="44" height="44" loading="lazy" draggable="false"><div><b>${n}</b><span>${r}</span></div></figcaption></figure>`).join('')}</div>
   </div></section>
@@ -1487,7 +1487,7 @@ function lemonPay(c){
 }
 async function waitForAccess(c){
   if(owned(c.id)) return successModal(c);
-  modal(`<div class="success" style="display:grid;gap:14px"><span class="spin" style="width:28px;height:28px"></span><h2>Confirmando tu pago…</h2><p style="color:var(--muted)">${isExternal(c)?'Termina el pago en la pestaña de '+payName(c)+'. Apenas se confirme, tu acceso se activa aquí solo.':'Esto toma unos segundos. No cierres esta página.'}</p></div>`);
+  modal(`<div class="success" style="display:grid;gap:14px"><span class="spin" style="width:28px;height:28px"></span><h2>Confirmando tu pago…</h2><p style="color:var(--muted)">${isPolar(c)?'Estamos confirmando tu pago con Polar. Toma unos segundos: apenas se confirme, tu acceso se activa aquí solo.':isExternal(c)?'Termina el pago en la pestaña de '+payName(c)+'. Apenas se confirme, tu acceso se activa aquí solo.':'Esto toma unos segundos. No cierres esta página.'}</p></div>`);
   for(let i=0;i<(isExternal(c)?120:30);i++){
     await new Promise(r=>setTimeout(r,2500));
     const {data}=await sb.from('compras').select('curso_id').eq('curso_id',c.id).eq('estado','pagado').maybeSingle();
