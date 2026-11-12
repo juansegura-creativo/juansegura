@@ -1,0 +1,15 @@
+{
+  "name": "juansegura",
+  "version": "1.0.0",
+  "description": "Cursos de Juan Segura",
+  "scripts": {
+    "dev": "npx serve .",
+    "build": "echo 'Static site - no build required'"
+  },
+  "keywords": [],
+  "author": "Juan Segura",
+  "license": "ISC",
+  "dependencies": {
+    "@vercel/analytics": "^1.4.1"
+  }
+}
