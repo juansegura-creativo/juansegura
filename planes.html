@@ -175,7 +175,14 @@ textarea.fallback{width:100%;min-height:140px;font:12px var(--mono);background:v
           </div>
         </section>
         <section class="block">
-          <h2><span><span class="stepn">3</span>Escoge tu plan</span> <small>el marketing ya viene incluido</small></h2>
+          <h2><span><span class="stepn">3</span>¿Quieres marketing en tu plan?</span></h2>
+          <div class="seg" role="tablist" aria-label="Marketing">
+            <button type="button" id="mkY" class="on" role="tab">Con marketing</button>
+            <button type="button" id="mkN" role="tab">Sin marketing, solo videos</button>
+          </div>
+        </section>
+        <section class="block">
+          <h2><span><span class="stepn">4</span>Escoge tu plan</span> <small id="planNote">el marketing ya viene incluido</small></h2>
           <div class="plans" id="plans"></div>
         </section>
       </div>
@@ -274,13 +281,21 @@ const PLANS = {
     {name:"Máximo", price:890, cfg:{reels:0,horiz:12,scripts:1,mkt:3}, items:["12 videos horizontales","Guiones incluidos","Marketing Pro"]}
   ]
 };
-let line = "R", plan = 1, lastPlan = 1, scr = true;
+let line = "R", plan = 1, lastPlan = 1, scr = true, mk = true;
 const LN = {R:"Solo reels", V:"Solo horizontales", H:"Reels + horizontales"};
 // Plan sin guiones: se descuenta el valor de los guiones con el 20% de descuento del plan
+// Plan sin marketing: se descuenta el marketing del plan con el mismo 20% de descuento
 function planAt(i){
-  const P = PLANS[line][i]; if (scr) return P;
-  const c = P.cfg, sv = (c.reels*PRICE.scriptReel + c.horiz*PRICE.scriptHoriz)*0.8;
-  return {...P, price: Math.round((P.price - sv)/10)*10 - 1, cfg:{...c, scripts:0}, items: P.items.map(x => x==="Guiones incluidos" ? "Sin guiones (tú los traes)" : x)};
+  let P = PLANS[line][i];
+  if (!scr){
+    const c = P.cfg, sv = (c.reels*PRICE.scriptReel + c.horiz*PRICE.scriptHoriz)*0.8;
+    P = {...P, price: Math.round((P.price - sv)/10)*10 - 1, cfg:{...c, scripts:0}, items: P.items.map(x => x==="Guiones incluidos" ? "Sin guiones (tú los traes)" : x)};
+  }
+  if (!mk && P.cfg.mkt > 0){
+    const c = P.cfg, sv = MKT[c.mkt].p*0.8;
+    P = {...P, price: Math.round((P.price - sv)/10)*10 - 1, cfg:{...c, mkt:0}, items: P.items.filter(x => !x.startsWith("Marketing")).concat("Sin marketing")};
+  }
+  return P;
 }
 
 const $ = id => document.getElementById(id);
@@ -304,6 +319,8 @@ function drawPlans(){
   $("planBox").hidden = plan===null; $("customBox").hidden = plan!==null;
   $("mPlan").classList.toggle("on", plan!==null); $("mCustom").classList.toggle("on", plan===null);
   $("scrY").classList.toggle("on", scr); $("scrN").classList.toggle("on", !scr);
+  $("mkY").classList.toggle("on", mk); $("mkN").classList.toggle("on", !mk);
+  $("planNote").textContent = mk ? "el marketing ya viene incluido" : "solo producción de videos";
   $("plans").innerHTML = PLANS[line].map((_,i)=>planAt(i)).map((P,i)=>`<button type="button" class="plan${i===plan?" on":""}" data-i="${i}">${P.tag?`<span class="tag">${P.tag}</span>`:""}<span class="pn">${P.name}</span><span class="pp">${money(P.price)} <small>USD/mes</small></span><ul>${P.items.map(x=>`<li>${x}</li>`).join("")}</ul><span class="ps">${P.unlimited?"Sin límite de reels":(v=>`Valor real ${money(v.total)} · ahorras ${v.pct}%`)(valueStack({r:P.cfg.reels,h:P.cfg.horiz,scripts:P.cfg.scripts,mkt:P.cfg.mkt},{L:[],total:P.price}))}</span></button>`).join("");
 }
 function applyCfg(c){
@@ -377,6 +394,9 @@ $("cScrN").addEventListener("click", ()=>{ $("scripts").checked = false; render(
 function setScr(v){ scr = v; if (plan!==null) applyCfg(planAt(plan).cfg); render(); }
 $("scrY").addEventListener("click", ()=>setScr(true));
 $("scrN").addEventListener("click", ()=>setScr(false));
+function setMk(v){ mk = v; if (plan!==null) applyCfg(planAt(plan).cfg); render(); }
+$("mkY").addEventListener("click", ()=>setMk(true));
+$("mkN").addEventListener("click", ()=>setMk(false));
 document.addEventListener("click", e => {
   const s = e.target.closest("[data-step]");
   if (s){ const inp = $(s.dataset.step); inp.value = clamp(+inp.value + +s.dataset.d, +inp.max); plan = null; render(); }
